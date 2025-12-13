@@ -3,467 +3,624 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Absensi Event Natal 2025 (Realtime Sync)</title>
+    <title>Absensi Event Natal 2025</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    
     <style>
+        body { font-family: 'Inter', sans-serif; }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
         .animate-pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         .animate-spin { animation: spin 1s linear infinite; }
+        
+        #reader { width: 100%; border-radius: 1rem; overflow: hidden; background: black; border: 4px solid #ef4444; }
+        #reader video { object-fit: cover; border-radius: 0.5rem; }
+        #reader__dashboard_section_csr span, #reader__dashboard_section_swaplink { display: none !important; }
+        
+        img.qr-code { image-rendering: pixelated; }
     </style>
 </head>
-<body class="min-h-screen bg-gradient-to-br from-red-50 via-green-50 to-red-50">
-    <div class="fixed top-0 left-0 w-full pointer-events-none z-0 opacity-20">
-        <div class="text-6xl">🎄 ⭐ 🎅 ❄️ 🔔 🎁 ⛄ 🦌</div>
+<body class="min-h-screen bg-gray-50 text-gray-800">
+
+    <div class="fixed inset-0 pointer-events-none opacity-5 overflow-hidden z-0">
+        <div class="absolute -top-10 -left-10 text-9xl">🎄</div>
+        <div class="absolute top-1/2 -right-10 text-9xl">❄️</div>
+        <div class="absolute bottom-0 left-20 text-9xl">🎅</div>
     </div>
 
-    <div id="app" class="relative z-10 container mx-auto px-4 py-8 max-w-4xl">
-        <div class="flex justify-center items-center h-screen" id="loading">
-            <div class="text-2xl font-bold text-gray-600 animate-pulse">Menghubungkan ke Server... 🔄</div>
+    <div id="app" class="relative z-10 max-w-md mx-auto md:max-w-4xl min-h-screen bg-white shadow-2xl md:my-8 md:rounded-3xl overflow-hidden flex flex-col">
+        
+        <div class="flex flex-col justify-center items-center h-screen bg-white absolute inset-0 z-[60]" id="loading">
+            <div class="text-6xl mb-4 animate-spin">❄️</div>
+            <div class="font-bold text-gray-600 animate-pulse">Memuat Sistem...</div>
+        </div>
+
+        <header class="bg-gradient-to-r from-red-700 to-red-600 text-white p-6 pb-12 relative overflow-hidden">
+            <div class="relative z-10">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h1 class="text-2xl font-extrabold tracking-tight">NATAL 2025</h1>
+                        <p class="text-red-100 text-xs opacity-90">Sistem Absensi Jemaat</p>
+                    </div>
+                    <div class="text-right">
+                        <div id="liveClock" class="text-2xl font-mono font-bold leading-none">00:00:00</div>
+                        <div id="liveDate" class="text-[10px] text-red-200 uppercase mt-1">...</div>
+                    </div>
+                </div>
+                
+                <div class="flex gap-3 mt-6">
+                    <div class="bg-white/10 backdrop-blur-sm rounded-xl p-3 flex-1 border border-white/20">
+                        <div class="text-3xl font-bold" id="statRegistered">0</div>
+                        <div class="text-[10px] uppercase tracking-wider opacity-80">Jemaat</div>
+                    </div>
+                    <div class="bg-white/10 backdrop-blur-sm rounded-xl p-3 flex-1 border border-white/20">
+                        <div class="text-3xl font-bold text-green-300" id="statPresent">0</div>
+                        <div class="text-[10px] uppercase tracking-wider opacity-80">Hadir</div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div class="flex px-4 -mt-8 relative z-20 gap-2">
+            <button onclick="setTab('register')" id="tab-register" class="flex-1 bg-white py-4 rounded-xl shadow-lg text-sm font-bold text-gray-400 transition-all border-b-4 border-transparent">📝 Daftar</button>
+            <button onclick="setTab('scan')" id="tab-scan" class="flex-1 bg-white py-4 rounded-xl shadow-lg text-sm font-bold text-gray-400 transition-all border-b-4 border-transparent">📷 Scan</button>
+            <button onclick="setTab('data')" id="tab-data" class="flex-1 bg-white py-4 rounded-xl shadow-lg text-sm font-bold text-gray-400 transition-all border-b-4 border-transparent">📊 Data</button>
+        </div>
+
+        <main class="flex-1 p-4 overflow-y-auto bg-gray-50 pb-20">
+            <div id="content-area"></div>
+        </main>
+    </div>
+
+    <div id="confirmModal" class="fixed inset-0 z-[110] flex items-center justify-center bg-black/80 hidden backdrop-blur-sm opacity-0 transition-opacity duration-300">
+        <div class="bg-white w-full max-w-sm mx-4 rounded-3xl p-6 text-center transform scale-95 transition-transform duration-300 shadow-2xl border-t-8 border-yellow-400">
+            <h3 class="text-xl font-bold text-gray-800 mb-2">Konfirmasi Data</h3>
+            <p class="text-sm text-gray-500 mb-6">Mohon periksa apakah data sudah benar?</p>
+            
+            <div class="bg-gray-50 p-4 rounded-xl mb-6 text-left border border-gray-200 space-y-3">
+                <div>
+                    <div class="text-xs text-gray-400 uppercase tracking-wider font-bold mb-1">Nama Lengkap</div>
+                    <div id="confirmName" class="text-lg font-bold text-gray-800 border-b pb-1">Nama Peserta</div>
+                </div>
+                
+                <div class="flex gap-4">
+                    <div class="flex-1">
+                        <div class="text-xs text-gray-400 uppercase tracking-wider font-bold mb-1">Kelas</div>
+                        <div id="confirmClass" class="text-md font-bold text-purple-600">Umum</div>
+                    </div>
+                    <div class="flex-1">
+                        <div class="text-xs text-gray-400 uppercase tracking-wider font-bold mb-1">Sektor</div>
+                        <div id="confirmSector" class="text-md font-bold text-blue-600">Sektor 1</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex gap-3">
+                <button onclick="closeConfirmModal()" class="flex-1 py-3 rounded-xl font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors">✏️ Perbaiki</button>
+                <button onclick="saveConfirmedData()" class="flex-1 py-3 rounded-xl font-bold text-white bg-green-600 hover:bg-green-700 shadow-lg transition-colors">✅ Ya, Simpan</button>
+            </div>
         </div>
     </div>
 
+    <div id="ticketModal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 hidden backdrop-blur-sm opacity-0 transition-opacity duration-300">
+        <div class="bg-white w-full max-w-sm mx-4 rounded-3xl p-6 text-center transform scale-90 transition-transform duration-300 relative">
+            <button onclick="closeTicket()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-800 text-2xl">✕</button>
+            <div class="text-red-600 font-bold tracking-widest text-sm mb-1">TIKET NATAL 2025</div>
+            <h2 id="modalName" class="text-2xl font-black text-gray-800 mb-1 leading-tight">Nama Peserta</h2>
+            
+            <div class="flex justify-center gap-2 mb-4">
+                <div id="modalClass" class="bg-purple-100 text-purple-800 text-xs font-bold px-3 py-1 rounded-full">Kelas -</div>
+                <div id="modalSector" class="bg-blue-100 text-blue-800 text-xs font-bold px-3 py-1 rounded-full">Sektor -</div>
+            </div>
+            
+            <div class="bg-white p-6 rounded-2xl mb-4 border-4 border-gray-200 shadow-inner">
+                <img id="modalQR" src="" class="w-full h-auto object-contain mx-auto mix-blend-normal qr-code" alt="QR">
+            </div>
+            <p class="text-xs text-gray-400 mb-6 font-bold">Arahkan kamera HP Panitia ke layar ini</p>
+            <button onclick="closeTicket()" class="w-full bg-red-600 text-white py-3 rounded-xl font-bold shadow-lg hover:bg-red-700">Tutup</button>
+        </div>
+    </div>
+
+    <input type="file" id="importInput" accept=".csv" class="hidden" onchange="handleImport(this)">
+
     <script type="module">
-        // Import fungsi-fungsi Firebase yang dibutuhkan
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, push, set, onValue, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getDatabase, ref, push, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        // --- KONFIGURASI FIREBASE (GANTI BAGIAN INI DENGAN PUNYA ANDA) ---
-        // Cara dapat: Firebase Console -> Project Settings -> General -> Your Apps
+        // --- KONFIGURASI FIREBASE ---
         const firebaseConfig = {
-                               apiKey: "AIzaSyBzka8Ps_nf-8zDA2tMDmqEMw6zMoy3aeM",
-                               authDomain: "eventnatal2025.firebaseapp.com",
-  
-       // 👇 INI BAGIAN YANG BARU SAJA ANDA TAMBAHKAN
-              databaseURL: "https://eventnatal2025-default-rtdb.asia-southeast1.firebasedatabase.app/",
-  
-              projectId: "eventnatal2025",
-              storageBucket: "eventnatal2025.firebasestorage.app",
-              messagingSenderId: "961570070334",
-              appId: "1:961570070334:web:888638e9de275e27b2566f",
-              measurementId: "G-QX5GJPEDCF"
-              };
-        // ------------------------------------------------------------------
+            apiKey: "AIzaSyBzka8Ps_nf-8zDA2tMDmqEMw6zMoy3aeM",
+            authDomain: "eventnatal2025.firebaseapp.com",
+            databaseURL: "https://eventnatal2025-default-rtdb.asia-southeast1.firebasedatabase.app/", 
+            projectId: "eventnatal2025",
+            storageBucket: "eventnatal2025.firebasestorage.app",
+            messagingSenderId: "961570070334",
+            appId: "1:961570070334:web:888638e9de275e27b2566f",
+            measurementId: "G-QX5GJPEDCF"
+        };
 
-        // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
+        const ADMIN_PASSWORD = "ADMIN123"; 
 
-        // State Management
+        // --- STATE & VARS ---
         let state = {
             participants: [],
             attendanceRecords: [],
             activeTab: 'register',
             scanning: false,
             scanResult: null,
-            cameraError: null
+            searchTerm: ''
         };
+        
+        let tempParticipantData = null; 
+        let html5QrcodeScanner = null;
+        
+        // Audio Beep
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playBeep() {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            oscillator.type = 'square';
+            oscillator.frequency.setValueAtTime(800, audioCtx.currentTime); 
+            gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            oscillator.start();
+            oscillator.stop(audioCtx.currentTime + 0.1); 
+        }
 
-        let videoStream = null;
-        let scanInterval = null;
+        // --- CLOCK & UTILS ---
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('liveClock').innerText = now.toLocaleTimeString('id-ID', {hour12: false});
+            document.getElementById('liveDate').innerText = now.toLocaleDateString('id-ID', {weekday: 'long', day: 'numeric', month: 'long'});
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
 
-        // --- DATABASE LISTENERS (REALTIME SYNC) ---
-        // Fungsi ini akan berjalan otomatis setiap ada data berubah di server
-        function initRealtimeListeners() {
-            const participantsRef = ref(db, 'participants');
-            const attendanceRef = ref(db, 'attendance');
+        window.getFormattedDate = () => new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
+        window.getQRUrl = (text) => `https://api.qrserver.com/v1/create-qr-code/?size=600x600&margin=25&qzone=4&data=${encodeURIComponent(text)}&bgcolor=ffffff&color=000000&format=png`;
 
-            // Dengar perubahan data peserta
-            onValue(participantsRef, (snapshot) => {
-                const data = snapshot.val();
-                state.participants = data ? Object.values(data) : [];
-                render();
+        // --- FIREBASE LISTENERS ---
+        function initListeners() {
+            onValue(ref(db, 'participants'), (snap) => {
+                state.participants = snap.val() ? Object.values(snap.val()) : [];
+                updateStats();
+                if(state.activeTab !== 'scan') render(); 
             });
-
-            // Dengar perubahan data kehadiran
-            onValue(attendanceRef, (snapshot) => {
-                const data = snapshot.val();
-                state.attendanceRecords = data ? Object.values(data) : [];
-                render();
-                
-                // Hilangkan loading screen jika data sudah masuk
-                const loading = document.getElementById('loading');
-                if(loading) loading.style.display = 'none';
+            onValue(ref(db, 'attendance'), (snap) => {
+                state.attendanceRecords = snap.val() ? Object.values(snap.val()) : [];
+                updateStats();
+                if(state.activeTab !== 'scan') render();
+                document.getElementById('loading').style.display = 'none';
             });
         }
 
-        // --- LOGIC APLIKASI ---
+        function updateStats() {
+            document.getElementById('statRegistered').innerText = state.participants.length;
+            document.getElementById('statPresent').innerText = state.attendanceRecords.length;
+        }
 
-        // Helper: Format Tanggal Indonesia
-        window.getFormattedDate = () => {
-            return new Date().toLocaleString('id-ID', { 
-                timeZone: 'Asia/Jakarta',
-                day: '2-digit', month: 'long', year: 'numeric',
-                hour: '2-digit', minute: '2-digit', second: '2-digit'
+        // --- LOGIKA PENDAFTARAN & KONFIRMASI (UPDATED WITH CLASS) ---
+        window.prepareRegistration = () => {
+            const inputName = document.getElementById('newName');
+            const inputClass = document.getElementById('newClass');
+            const inputSector = document.getElementById('newSector');
+            
+            const name = inputName.value.trim();
+            const classGrade = inputClass.value;
+            const sector = inputSector.value;
+
+            // VALIDASI
+            if (!name) { alert("Mohon isi Nama Peserta!"); return; }
+            if (!classGrade) { alert("Mohon pilih Kelas!"); return; }
+            if (!sector) { alert("Mohon pilih Sektor!"); return; }
+
+            // Set Data Sementara
+            tempParticipantData = { name, classGrade, sector };
+            
+            // Update Modal Konfirmasi
+            document.getElementById('confirmName').innerText = name;
+            document.getElementById('confirmClass').innerText = classGrade;
+            document.getElementById('confirmSector').innerText = sector;
+
+            const modal = document.getElementById('confirmModal');
+            modal.classList.remove('hidden');
+            setTimeout(() => { modal.classList.remove('opacity-0'); modal.querySelector('div').classList.remove('scale-95'); modal.querySelector('div').classList.add('scale-100'); }, 10);
+        };
+
+        window.closeConfirmModal = () => {
+            const modal = document.getElementById('confirmModal');
+            modal.classList.add('opacity-0'); modal.querySelector('div').classList.add('scale-95');
+            setTimeout(() => { modal.classList.add('hidden'); }, 300);
+        };
+
+        window.saveConfirmedData = () => {
+            if (!tempParticipantData) return;
+            const { name, classGrade, sector } = tempParticipantData;
+            const newId = Date.now().toString();
+            const qrCode = `NATAL-${newId.slice(-6)}`; 
+            
+            push(ref(db, 'participants'), {
+                id: newId, 
+                name: name, 
+                classGrade: classGrade, // Simpan Kelas
+                sector: sector, 
+                qrCode: qrCode,
+                registeredAt: window.getFormattedDate(), 
+                timestamp: Date.now()
+            }).then(() => {
+                window.closeConfirmModal();
+                // Reset Form
+                document.getElementById('newName').value = '';
+                document.getElementById('newClass').value = '';
+                document.getElementById('newSector').value = ''; 
+                
+                window.showTicket(name, classGrade, sector, qrCode);
+                tempParticipantData = null;
             });
         };
 
-        // Generate QR URL
-        window.generateQRCode = (text, size = 400) => {
-            return `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(text)}`;
-        };
-
-        // Tambah Peserta (Kirim ke Firebase)
-        window.addParticipant = () => {
-            const input = document.getElementById('newName');
-            const name = input.value.trim();
-            if (!name) return;
-
-            const newId = Date.now().toString();
-            const participantData = {
-                id: newId,
-                name: name,
-                qrCode: `NATAL-${newId}`,
-                registeredAt: window.getFormattedDate(), // Waktu Realtime Client
-                timestamp: Date.now() // Timestamp murni untuk sorting
-            };
-
-            // Simpan ke Firebase (otomatis sync ke semua device)
-            push(ref(db, 'participants'), participantData)
-                .then(() => {
-                    alert(`✅ ${name} berhasil didaftarkan!`);
-                    input.value = '';
-                })
-                .catch((error) => alert('❌ Gagal menyimpan: ' + error.message));
-        };
-
-        // Check-in Logic (Kirim ke Firebase)
         window.checkIn = (participantId) => {
             const participant = state.participants.find(p => p.id === participantId);
-            if (!participant) return;
-
-            // Cek duplikasi di lokal dulu (Firebase juga bisa validasi rules, tapi ini utk UX)
-            const alreadyCheckedIn = state.attendanceRecords.find(r => r.participantId === participantId);
-            if (alreadyCheckedIn) {
-                state.scanResult = {
-                    success: false,
-                    message: `⚠️ ${participant.name} SUDAH check-in sebelumnya!`,
-                    time: alreadyCheckedIn.timestamp
-                };
-                render();
-                setTimeout(() => { state.scanResult = null; render(); }, 3000);
-                return;
+            if(!participant) return;
+            const isPresent = state.attendanceRecords.find(r => r.participantId === participantId);
+            
+            if (isPresent) {
+                playBeep(); 
+                state.scanResult = { success: false, msg: `⚠️ ${participant.name} SUDAH Check-in!`, time: isPresent.timestamp };
+            } else {
+                playBeep();
+                push(ref(db, 'attendance'), {
+                    id: Date.now().toString(), participantId: participant.id, name: participant.name,
+                    sector: participant.sector || '-', 
+                    classGrade: participant.classGrade || '-', // Simpan kelas di log
+                    timestamp: window.getFormattedDate()
+                });
+                state.scanResult = { success: true, msg: `✅ ${participant.name} Masuk!`, time: window.getFormattedDate() };
             }
-
-            const recordData = {
-                id: Date.now().toString(),
-                participantId: participant.id,
-                name: participant.name,
-                timestamp: window.getFormattedDate(), // Waktu Realtime saat Scan
-                serverTime: Date.now()
-            };
-
-            // Kirim data absensi ke Firebase
-            push(ref(db, 'attendance'), recordData)
-                .then(() => {
-                    state.scanResult = {
-                        success: true,
-                        message: `✅ ${participant.name} BERHASIL Check-in!`,
-                        time: recordData.timestamp
-                    };
-                    render();
-                    
-                    // Mainkan suara sukses (opsional UX)
-                    // const audio = new Audio('path/to/success.mp3'); audio.play();
-
-                    setTimeout(() => { state.scanResult = null; render(); }, 3000);
-                })
-                .catch((err) => alert('Gagal checkin: ' + err.message));
+            
+            if(state.activeTab === 'scan' && state.scanning) {
+               const resDiv = document.getElementById('scan-result-wrapper');
+               if(resDiv) resDiv.innerHTML = getScanResultHTML();
+            } else {
+               render(); 
+            }
+            setTimeout(() => { 
+                state.scanResult = null; 
+                if(state.activeTab === 'scan' && state.scanning) {
+                     const resDiv = document.getElementById('scan-result-wrapper');
+                     if(resDiv) resDiv.innerHTML = '';
+                } else { render(); }
+            }, 3000);
         };
 
-        // Import CSV Logic
-        window.handleImportFile = (event) => {
-            const file = event.target.files[0];
-            if (!file) return;
+        // --- EXPORT & IMPORT (UPDATED WITH CLASS) ---
+        window.exportData = (type) => {
+            let csvContent = "data:text/csv;charset=utf-8,";
+            if (type === 'participants') {
+                csvContent += "Nama,Kelas,Sektor,ID QR,Waktu Daftar\n";
+                state.participants.forEach(p => {
+                    csvContent += `"${p.name}","${p.classGrade || ''}","${p.sector || ''}","${p.qrCode}","${p.registeredAt}"\n`;
+                });
+                const link = document.createElement("a");
+                link.setAttribute("href", encodeURI(csvContent));
+                link.setAttribute("download", "Data_Jemaat_Natal_2025.csv");
+                document.body.appendChild(link);
+                link.click();
+            } 
+            else if (type === 'attendance') {
+                csvContent += "Nama,Kelas,Sektor,Waktu Hadir\n";
+                state.attendanceRecords.forEach(r => {
+                    csvContent += `"${r.name}","${r.classGrade || ''}","${r.sector || ''}","${r.timestamp}"\n`;
+                });
+                const link = document.createElement("a");
+                link.setAttribute("href", encodeURI(csvContent));
+                link.setAttribute("download", "Laporan_Absensi_Natal_2025.csv");
+                document.body.appendChild(link);
+                link.click();
+            }
+        };
 
+        window.triggerImport = () => { document.getElementById('importInput').click(); };
+
+        window.handleImport = (input) => {
+            const file = input.files[0];
+            if (!file) return;
             const reader = new FileReader();
             reader.onload = (e) => {
                 const text = e.target.result;
-                const lines = text.split('\n').filter(line => line.trim());
-                const startIndex = lines[0].toLowerCase().includes('nama') ? 1 : 0;
-                
-                let successCount = 0;
-                
-                lines.slice(startIndex).forEach((line, idx) => {
-                    const name = line.trim().replace(/,.*$/, '').replace(/"/g, '');
+                const rows = text.split('\n');
+                let count = 0;
+                rows.forEach((row, index) => {
+                    const cleanRow = row.trim();
+                    if (!cleanRow) return;
+                    if (index === 0 && cleanRow.toLowerCase().includes('nama')) return; // Skip Header
+
+                    // Format CSV: Nama, Kelas, Sektor
+                    const cols = cleanRow.split(/[,;]/);
+                    const name = cols[0]?.replace(/"/g, '').trim();
+                    const classGrade = cols[1]?.replace(/"/g, '').trim() || 'Umum'; // Default Kelas
+                    const sector = cols[2]?.replace(/"/g, '').trim() || 'Sektor 1'; // Default Sektor
+
                     if (name) {
-                        const newId = `${Date.now()}-${idx}`;
-                        const pData = {
-                            id: newId,
-                            name: name,
-                            qrCode: `NATAL-${newId}`,
-                            registeredAt: window.getFormattedDate(),
-                            timestamp: Date.now()
-                        };
-                        // Push satu per satu (bisa dioptimasi pakai update(), tapi push aman untuk pemula)
-                        push(ref(db, 'participants'), pData);
-                        successCount++;
+                        const newId = (Date.now() + index).toString(); 
+                        const qrCode = `NATAL-${newId.slice(-6)}`;
+                        push(ref(db, 'participants'), {
+                            id: newId, name: name, classGrade: classGrade, sector: sector, 
+                            qrCode: qrCode, registeredAt: window.getFormattedDate(), timestamp: Date.now()
+                        });
+                        count++;
                     }
                 });
-                alert(`Proses import ${successCount} data sedang berjalan di background...`);
+                alert(`Berhasil mengimport ${count} data jemaat!`);
+                input.value = ''; 
             };
             reader.readAsText(file);
-            event.target.value = '';
-        }
+        };
 
-        // --- FUNGSI KAMERA & UTILITAS (Sama seperti sebelumnya, disesuaikan context window) ---
-        
-        window.startScanning = async () => {
-            state.cameraError = null;
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { facingMode: 'environment' } 
-                });
-                videoStream = stream;
-                state.scanning = true;
-                render();
+        // --- SCANNER LOGIC ---
+        window.startScanning = () => {
+            if(state.scanning) return;
+            state.scanning = true;
+            render(); 
+
+            setTimeout(() => {
+                const config = { 
+                    fps: 20, qrbox: { width: 250, height: 250 }, aspectRatio: 1.0,
+                    videoConstraints: { facingMode: "environment", focusMode: "continuous" }
+                };
+                html5QrcodeScanner = new Html5QrcodeScanner("reader", config, false);
+                html5QrcodeScanner.render((decodedText) => {
+                    html5QrcodeScanner.pause(); 
+                    window.processQRCode(decodedText);
+                    setTimeout(() => { html5QrcodeScanner.resume(); }, 2000);
+                }, (err) => {});
                 
-                const video = document.getElementById('videoElement');
-                video.srcObject = stream;
-                video.setAttribute('playsinline', 'true');
-                await video.play();
-                startQRScanning();
-            } catch (err) {
-                state.cameraError = err.message;
-                alert('Gagal akses kamera. Pastikan izin diberikan dan menggunakan HTTPS.');
-                render();
-            }
-        };
-
-        window.stopScanning = () => {
-            if (videoStream) {
-                videoStream.getTracks().forEach(track => track.stop());
-                videoStream = null;
-            }
-            if (scanInterval) {
-                clearInterval(scanInterval);
-                scanInterval = null;
-            }
-            state.scanning = false;
-            state.scanResult = null;
-            render();
-        };
-
-        window.startQRScanning = () => {
-            const video = document.getElementById('videoElement');
-            const canvas = document.getElementById('canvasElement');
-            const ctx = canvas.getContext('2d');
-
-            scanInterval = setInterval(() => {
-                if (video.readyState === video.HAVE_ENOUGH_DATA) {
-                    canvas.width = video.videoWidth;
-                    canvas.height = video.videoHeight;
-                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-                    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                    const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: "dontInvert" });
-                    
-                    if (code && code.data) {
-                        processQRCode(code.data);
-                        window.stopScanning();
-                    }
-                }
+                const cleanInterval = setInterval(() => {
+                   const links = document.querySelectorAll('#reader a');
+                   links.forEach(l => l.style.display = 'none');
+                   if(document.getElementById('reader__dashboard_section_swaplink')) clearInterval(cleanInterval);
+                }, 100);
             }, 100);
         };
 
-        window.processQRCode = (qrText) => {
-            // Cari di state yang sudah tersinkron dengan firebase
-            const participant = state.participants.find(p => p.qrCode === qrText);
-            if (!participant) {
-                alert('QR Code tidak dikenali!');
-                return;
-            }
-            window.checkIn(participant.id);
+        window.stopScanning = () => {
+            if (html5QrcodeScanner) {
+                html5QrcodeScanner.clear().then(() => {
+                    html5QrcodeScanner = null; state.scanning = false; render();
+                }).catch(err => { state.scanning = false; render(); });
+            } else { state.scanning = false; render(); }
         };
 
-        window.setTab = (tab) => {
-            state.activeTab = tab;
+        window.processQRCode = (text) => {
+            const participant = state.participants.find(p => p.qrCode === text);
+            if(participant) {
+                window.checkIn(participant.id);
+            } else {
+                playBeep();
+                state.scanResult = { success: false, msg: `❌ QR Tidak Dikenal`, time: '' };
+                const resDiv = document.getElementById('scan-result-wrapper');
+                if(resDiv) resDiv.innerHTML = getScanResultHTML();
+                setTimeout(() => { 
+                    state.scanResult = null;
+                    const resDiv = document.getElementById('scan-result-wrapper');
+                    if(resDiv) resDiv.innerHTML = '';
+                }, 2000);
+            }
+        };
+
+        window.handleSearch = (el) => {
+            state.searchTerm = el.value.toLowerCase();
+            const container = document.getElementById('manual-list');
+            if(!container) return;
+            const filtered = state.participants.filter(p => p.name.toLowerCase().includes(state.searchTerm));
+            if(filtered.length === 0) {
+                container.innerHTML = '<div class="text-center text-gray-400 py-4">Nama tidak ditemukan</div>';
+                return;
+            }
+            container.innerHTML = renderManualListItems(filtered);
+        };
+
+        function getScanResultHTML() {
+            if(!state.scanResult) return '';
+            return `
+                <div class="mb-4 p-4 rounded-2xl ${state.scanResult.success ? 'bg-green-500' : 'bg-red-500'} text-white shadow-lg animate-pulse text-center">
+                    <div class="text-2xl font-black mb-1">${state.scanResult.msg}</div>
+                    <div class="text-xs opacity-80">${state.scanResult.time}</div>
+                </div>
+            `;
+        }
+        
+        function renderManualListItems(list) {
+            return list.map(p => {
+                const isPresent = state.attendanceRecords.find(r => r.participantId === p.id);
+                return `
+                <div class="flex items-center justify-between p-3 border-b border-gray-100">
+                    <div>
+                        <div class="font-bold text-gray-800">${p.name}</div>
+                        <div class="flex gap-2 mt-1">
+                            <span class="text-[10px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded font-bold">${p.classGrade || 'Umum'}</span>
+                            <span class="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded font-bold">${p.sector || 'Sektor -'}</span>
+                        </div>
+                    </div>
+                    ${isPresent 
+                        ? `<span class="text-green-600 font-bold text-xs bg-green-100 px-2 py-1 rounded">HADIR</span>`
+                        : `<button onclick="checkIn('${p.id}')" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-blue-700">CHECK-IN</button>`
+                    }
+                </div>`;
+            }).join('');
+        }
+
+        // --- MAIN RENDER ---
+        window.setTab = (t) => {
+            if(state.activeTab === 'scan' && t !== 'scan') window.stopScanning();
+            state.activeTab = t;
+            ['register', 'scan', 'data'].forEach(x => {
+                const el = document.getElementById(`tab-${x}`);
+                if(x === t) el.className = "flex-1 bg-red-600 text-white py-4 rounded-xl shadow-lg text-sm font-bold transition-all transform -translate-y-2";
+                else el.className = "flex-1 bg-white py-4 rounded-xl shadow-sm text-sm font-bold text-gray-400 hover:bg-gray-50 transition-all";
+            });
             render();
         };
 
-        window.downloadAllQR = () => {
-            state.participants.forEach((p, index) => {
-                setTimeout(() => {
-                    const link = document.createElement('a');
-                    link.download = `QR-${p.name.replace(/\s+/g, '_')}.png`;
-                    link.href = window.generateQRCode(p.qrCode, 400);
-                    link.click();
-                }, index * 500); // Delay agak lama biar browser gak crash
-            });
-        };
-
-        window.exportData = (type) => {
-            let content = '', filename = '';
-            if(type === 'participants') {
-                const headers = ['No,Nama,QR Code,Waktu Daftar,Status'];
-                const rows = state.participants.map((p, i) => {
-                    const status = state.attendanceRecords.find(r => r.participantId === p.id) ? 'Hadir' : 'Belum';
-                    return `${i+1},"${p.name}",${p.qrCode},"${p.registeredAt}",${status}`;
-                });
-                content = headers.concat(rows).join('\n');
-                filename = 'Peserta_Natal.csv';
-            } else {
-                const headers = ['No,Nama,Waktu Check-in'];
-                const rows = state.attendanceRecords.map((r, i) => `${i+1},"${r.name}","${r.timestamp}"`);
-                content = headers.concat(rows).join('\n');
-                filename = 'Absensi_Natal.csv';
-            }
-            
-            const blob = new Blob(['\uFEFF' + content], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = filename;
-            link.click();
-        };
-
-        // --- RENDER FUNCTIONS (UI) ---
-        // Saya buat global agar bisa dipanggil di mana saja
         window.render = () => {
-            const app = document.getElementById('app');
-            // Jika belum load data firebase, jangan render dulu
-            if (!app) return;
+            const content = document.getElementById('content-area');
+            if(!content) return;
 
-            app.innerHTML = `
-                <div class="bg-gradient-to-r from-red-600 to-green-600 rounded-2xl shadow-2xl p-6 mb-6 text-white text-center relative overflow-hidden">
-                    <div class="absolute top-0 right-0 opacity-10 text-8xl transform translate-x-4 -translate-y-4">🎅</div>
-                    <h1 class="text-3xl md:text-4xl font-bold mb-2">Event Natal 2025</h1>
-                    <p class="text-sm md:text-lg opacity-90">Realtime Database Sync Active 🟢</p>
-                    
-                    <div class="mt-6 flex justify-center gap-4 md:gap-12">
-                        <div class="bg-white/20 rounded-lg p-3 backdrop-blur-sm min-w-[100px]">
-                            <div class="font-bold text-3xl">${state.participants.length}</div>
-                            <div class="text-xs uppercase tracking-wider">Terdaftar</div>
-                        </div>
-                        <div class="bg-white/20 rounded-lg p-3 backdrop-blur-sm min-w-[100px]">
-                            <div class="font-bold text-3xl">${state.attendanceRecords.length}</div>
-                            <div class="text-xs uppercase tracking-wider">Hadir</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="flex bg-white rounded-xl shadow-md p-1 mb-6">
-                    <button onclick="setTab('register')" class="flex-1 py-3 rounded-lg text-sm md:text-base font-semibold transition-all ${state.activeTab === 'register' ? 'bg-red-100 text-red-700 shadow-inner' : 'text-gray-500 hover:bg-gray-50'}">📋 Daftar</button>
-                    <button onclick="setTab('scan')" class="flex-1 py-3 rounded-lg text-sm md:text-base font-semibold transition-all ${state.activeTab === 'scan' ? 'bg-green-100 text-green-700 shadow-inner' : 'text-gray-500 hover:bg-gray-50'}">📷 Scan</button>
-                    <button onclick="setTab('attendance')" class="flex-1 py-3 rounded-lg text-sm md:text-base font-semibold transition-all ${state.activeTab === 'attendance' ? 'bg-blue-100 text-blue-700 shadow-inner' : 'text-gray-500 hover:bg-gray-50'}">📝 Data</button>
-                </div>
-
-                <div class="bg-white rounded-2xl shadow-xl p-4 md:p-6 min-h-[400px]">
-                    ${renderTabContent()}
-                </div>
-                
-                <div class="text-center mt-6 text-gray-400 text-xs">
-                    Powered by Firebase Realtime DB & Tailwind
-                </div>
-            `;
-        };
-
-        function renderTabContent() {
-            if (state.activeTab === 'register') return renderRegisterTab();
-            if (state.activeTab === 'scan') return renderScanTab();
-            return renderAttendanceTab();
-        }
-
-        function renderRegisterTab() {
-            return `
-                <div class="flex gap-2 mb-4">
-                    <input type="text" id="newName" placeholder="Nama Peserta Baru..." class="flex-1 px-4 py-3 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none" onkeypress="if(event.key==='Enter') addParticipant()">
-                    <button onclick="addParticipant()" class="bg-red-600 text-white px-6 rounded-lg font-bold hover:bg-red-700">💾</button>
-                </div>
-                <div class="flex gap-2 mb-6 text-sm">
-                    <button onclick="document.getElementById('fileInput').click()" class="flex-1 bg-gray-100 text-gray-700 py-2 rounded border hover:bg-gray-200">📂 Import CSV</button>
-                    <input type="file" id="fileInput" class="hidden" accept=".csv" onchange="handleImportFile(event)">
-                    <button onclick="exportData('participants')" class="flex-1 bg-purple-100 text-purple-700 py-2 rounded border border-purple-200 hover:bg-purple-200">📤 Export</button>
-                </div>
-                <div class="space-y-3 max-h-[500px] overflow-y-auto">
-                    ${state.participants.slice().reverse().map(p => {
-                        const isHadir = state.attendanceRecords.find(r => r.participantId === p.id);
-                        return `
-                        <div class="flex justify-between items-center p-3 border rounded-lg ${isHadir ? 'bg-green-50 border-green-200' : 'bg-gray-50'}">
-                            <div>
-                                <div class="font-bold text-gray-800">${p.name}</div>
-                                <div class="text-xs text-gray-500">${p.registeredAt}</div>
-                            </div>
-                            <div class="text-right">
-                                ${isHadir ? '<span class="text-xs bg-green-200 text-green-800 px-2 py-1 rounded-full">Hadir</span>' : `<span class="text-xs text-gray-400 font-mono">${p.qrCode}</span>`}
-                            </div>
-                        </div>`;
-                    }).join('')}
-                </div>
-                ${state.participants.length > 0 ? `<button onclick="downloadAllQR()" class="w-full mt-4 py-3 text-red-600 text-sm border border-red-200 rounded-lg hover:bg-red-50">🖨️ Download Semua QR</button>` : ''}
-            `;
-        }
-
-        function renderScanTab() {
-            if(!state.scanning) {
-                return `
-                    <div class="text-center py-8">
-                        <button onclick="startScanning()" class="bg-green-600 text-white w-full py-4 rounded-xl text-xl font-bold shadow-lg hover:bg-green-700 transform transition hover:scale-105 mb-6">
-                            📷 Buka Kamera
-                        </button>
+            if (state.activeTab === 'register') {
+                content.innerHTML = `
+                    <div class="bg-white p-6 rounded-3xl shadow-sm mb-6">
+                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Pendaftaran Peserta</label>
                         
-                        <div class="border-t pt-4 text-left">
-                            <h3 class="font-bold text-gray-700 mb-2">Manual Check-in (Tap Nama):</h3>
-                            <div class="grid grid-cols-1 gap-2 max-h-64 overflow-y-auto">
-                                ${state.participants.map(p => {
-                                    const done = state.attendanceRecords.find(r => r.participantId === p.id);
-                                    return `<button onclick="checkIn('${p.id}')" ${done ? 'disabled' : ''} class="text-left px-3 py-2 rounded border ${done ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'hover:bg-green-50 border-gray-200'}">
-                                        ${done ? '✅' : '⬜'} ${p.name}
-                                    </button>`
-                                }).join('')}
+                        <input type="text" id="newName" placeholder="Nama Lengkap..." class="w-full bg-gray-50 border-2 border-gray-100 rounded-xl px-4 py-3 font-bold focus:outline-none focus:border-red-500 transition-colors mb-3">
+                        
+                        <div class="flex gap-2 mb-3">
+                            <div class="relative flex-1">
+                                <select id="newClass" class="w-full bg-gray-50 border-2 border-gray-100 rounded-xl px-4 py-3 font-bold text-gray-600 focus:outline-none focus:border-red-500 transition-colors appearance-none">
+                                    <option value="" disabled selected>Pilih Kelas...</option>
+                                    <option value="Balita">Balita</option>
+                                    <option value="TK">TK</option>
+                                    <option value="1 SD">1 SD</option>
+                                    <option value="2 SD">2 SD</option>
+                                    <option value="3 SD">3 SD</option>
+                                    <option value="4 SD">4 SD</option>
+                                    <option value="5 SD">5 SD</option>
+                                    <option value="6 SD">6 SD</option>
+                                    <option value="SMP">SMP</option>
+                                    <option value="SMA/K">SMA/K</option>
+                                    <option value="Mahasiswa">Mahasiswa</option>
+                                    <option value="Umum">Umum</option>
+                                    <option value="Lansia">Lansia</option>
+                                </select>
+                                <div class="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-gray-500">▼</div>
+                            </div>
+
+                            <div class="relative flex-1">
+                                <select id="newSector" class="w-full bg-gray-50 border-2 border-gray-100 rounded-xl px-4 py-3 font-bold text-gray-600 focus:outline-none focus:border-red-500 transition-colors appearance-none">
+                                    <option value="" disabled selected>Pilih Sektor...</option>
+                                    ${Array.from({length: 12}, (_, i) => `<option value="Sektor ${i+1}">Sektor ${i+1}</option>`).join('')}
+                                </select>
+                                <div class="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-gray-500">▼</div>
                             </div>
                         </div>
+
+                        <button onclick="prepareRegistration()" class="w-full bg-red-600 text-white py-4 rounded-xl font-bold shadow-lg hover:bg-red-700 active:scale-95 transition-transform">LANJUT</button>
                     </div>
-                    ${renderScanResult()}
+                    
+                    <div class="space-y-3">
+                        ${state.participants.slice().reverse().map(p => {
+                             const isPresent = state.attendanceRecords.find(r => r.participantId === p.id);
+                             return `<div class="bg-white p-4 rounded-2xl shadow-sm flex items-center justify-between border-l-4 ${isPresent ? 'border-green-400' : 'border-gray-200'}">
+                                <div>
+                                    <div class="font-bold text-gray-800">${p.name}</div>
+                                    <div class="flex gap-2 mt-1">
+                                        <div class="text-[10px] text-white bg-purple-500 px-2 py-0.5 rounded-full inline-block font-bold">${p.classGrade || 'Umum'}</div>
+                                        <div class="text-[10px] text-white bg-blue-500 px-2 py-0.5 rounded-full inline-block font-bold">${p.sector || 'Sektor ?'}</div>
+                                    </div>
+                                </div>
+                                <button onclick="showTicket('${p.name}', '${p.classGrade}', '${p.sector}', '${p.qrCode}')" class="bg-gray-100 text-gray-600 px-3 py-2 rounded-lg text-xs font-bold hover:bg-gray-200">🎫 Tiket</button>
+                            </div>`
+                        }).join('')}
+                    </div>
                 `;
             }
-            return `
-                <div class="relative bg-black rounded-lg overflow-hidden shadow-2xl">
-                    <video id="videoElement" class="w-full h-64 object-cover"></video>
-                    <canvas id="canvasElement" class="hidden"></canvas>
-                    <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
-                        <div class="w-48 h-48 border-4 border-green-500 rounded-lg opacity-50 animate-pulse"></div>
-                    </div>
-                </div>
-                <button onclick="stopScanning()" class="w-full mt-4 bg-red-600 text-white py-3 rounded-lg font-bold">❌ Stop Kamera</button>
-            `;
-        }
-
-        function renderScanResult() {
-            if(!state.scanResult) return '';
-            const color = state.scanResult.success ? 'bg-green-100 border-green-500 text-green-800' : 'bg-red-100 border-red-500 text-red-800';
-            return `
-                <div class="fixed top-4 left-4 right-4 z-50 animate-pulse">
-                    <div class="${color} border-l-4 p-4 rounded shadow-2xl flex flex-col items-center justify-center">
-                        <div class="text-xl font-bold mb-1">${state.scanResult.message}</div>
-                        <div class="text-sm font-mono">${state.scanResult.time}</div>
-                    </div>
-                </div>
-            `;
-        }
-
-        function renderAttendanceTab() {
-            return `
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="font-bold text-gray-700">Log Kehadiran Realtime</h3>
-                    <button onclick="exportData('attendance')" class="text-sm text-blue-600 font-semibold hover:underline">Download CSV</button>
-                </div>
-                <div class="space-y-2">
-                    ${state.attendanceRecords.slice().reverse().map((r, i) => `
-                        <div class="flex items-center gap-3 p-3 bg-blue-50 border border-blue-100 rounded-lg">
-                            <div class="bg-blue-600 text-white w-8 h-8 flex items-center justify-center rounded-full font-bold text-sm">${state.attendanceRecords.length - i}</div>
-                            <div class="flex-1">
-                                <div class="font-bold text-gray-800">${r.name}</div>
-                                <div class="text-xs text-blue-600">🕒 ${r.timestamp}</div>
+            else if (state.activeTab === 'scan') {
+                if(!state.scanning) {
+                    content.innerHTML = `
+                         <div class="text-center py-10">
+                            <button onclick="startScanning()" class="bg-green-600 text-white w-full py-8 rounded-2xl text-2xl font-bold shadow-xl hover:bg-green-700 hover:scale-[1.01] transition-all mb-6 flex flex-col items-center gap-3">
+                                <span class="text-5xl">📷</span><span>Mulai Scan QR</span>
+                            </button>
+                            <div class="bg-white rounded-3xl p-6 shadow-sm text-left">
+                                <div class="flex items-center gap-2 mb-4"><span class="text-xl">🔍</span><h3 class="font-bold text-gray-700">Check-in Manual</h3></div>
+                                <input type="text" placeholder="Cari nama peserta..." class="w-full bg-gray-50 border-b-2 border-gray-200 px-4 py-3 mb-4 focus:outline-none focus:border-blue-500 transition-colors" oninput="handleSearch(this)">
+                                <div id="manual-list" class="max-h-60 overflow-y-auto">${renderManualListItems(state.participants)}</div>
                             </div>
                         </div>
-                    `).join('')}
-                    ${state.attendanceRecords.length === 0 ? '<div class="text-center text-gray-400 py-10">Belum ada data hadir</div>' : ''}
-                </div>
-            `;
-        }
+                    `;
+                } else {
+                    content.innerHTML = `
+                        <div id="scan-result-wrapper">${getScanResultHTML()}</div>
+                        <div class="bg-black rounded-3xl overflow-hidden shadow-2xl relative mb-6">
+                            <div id="reader"></div>
+                        </div>
+                        <button onclick="stopScanning()" class="w-full bg-red-600 text-white py-4 rounded-xl font-bold shadow-lg">❌ STOP KAMERA</button>
+                    `;
+                }
+            }
+            else if (state.activeTab === 'data') {
+                content.innerHTML = `
+                     <div class="bg-white p-4 rounded-2xl shadow-sm mb-6 flex flex-col gap-3">
+                        <h3 class="font-bold text-gray-600 text-sm uppercase">Manajemen Data</h3>
+                        <div class="flex gap-2">
+                             <button onclick="exportData('participants')" class="flex-1 bg-green-50 text-green-700 border border-green-200 py-3 rounded-lg text-xs font-bold hover:bg-green-100">
+                                📥 Export Jemaat
+                            </button>
+                            <button onclick="exportData('attendance')" class="flex-1 bg-blue-50 text-blue-700 border border-blue-200 py-3 rounded-lg text-xs font-bold hover:bg-blue-100">
+                                📥 Export Absensi
+                            </button>
+                        </div>
+                         <button onclick="triggerImport()" class="w-full bg-gray-50 text-gray-700 border border-gray-300 py-3 rounded-lg text-xs font-bold hover:bg-gray-100 flex items-center justify-center gap-2">
+                            📂 Import Data (CSV)
+                        </button>
+                        <p class="text-[10px] text-gray-400 text-center">Format CSV: Nama, Kelas, Sektor</p>
+                    </div>
 
-        // Start App
-        initRealtimeListeners();
+                    <div class="space-y-3">
+                        ${state.attendanceRecords.slice().reverse().map(r => `
+                        <div class="bg-white p-4 rounded-2xl shadow-sm flex items-center gap-4">
+                            <div class="bg-green-100 text-green-600 w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg">✓</div>
+                            <div>
+                                <div class="font-bold text-gray-800">${r.name}</div>
+                                <div class="flex gap-2 text-xs font-bold">
+                                    <span class="text-purple-600">${r.classGrade || '-'}</span>
+                                    <span class="text-blue-600">${r.sector || '-'}</span>
+                                </div>
+                                <div class="text-[10px] text-gray-400 font-mono mt-1">${r.timestamp}</div>
+                            </div>
+                        </div>`).join('')}
+                    </div>
+                    <div class="mt-12 text-center">
+                        <button onclick="resetDatabase()" class="text-red-300 text-[10px] font-bold border border-red-100 px-3 py-1 rounded hover:bg-red-50 hover:text-red-500 transition">Admin Reset Data</button>
+                    </div>
+                `;
+            }
+        };
+
+        // --- MODAL & RESET ---
+        window.showTicket = (name, classGrade, sector, qr) => {
+            document.getElementById('modalName').innerText = name;
+            document.getElementById('modalClass').innerText = classGrade || 'Umum';
+            document.getElementById('modalSector').innerText = sector || 'Sektor -';
+            document.getElementById('modalQR').src = window.getQRUrl(qr);
+            const m = document.getElementById('ticketModal');
+            m.classList.remove('hidden');
+            setTimeout(() => { m.classList.remove('opacity-0'); m.querySelector('div').classList.remove('scale-90'); m.querySelector('div').classList.add('scale-100'); }, 10);
+        };
+        window.closeTicket = () => {
+            const m = document.getElementById('ticketModal');
+            m.classList.add('opacity-0'); m.querySelector('div').classList.add('scale-90');
+            setTimeout(() => { m.classList.add('hidden'); }, 300);
+        };
+        window.resetDatabase = () => {
+            const pass = prompt("Masukkan Password Admin:");
+            if(pass === ADMIN_PASSWORD) {
+                if(confirm("Hapus SEMUA data?")) {
+                    set(ref(db, 'participants'), null);
+                    set(ref(db, 'attendance'), null);
+                    alert("Data bersih.");
+                }
+            } else if(pass !== null) alert("Password Salah.");
+        };
+
+        initListeners();
+        setTab('register');
 
     </script>
 </body>
