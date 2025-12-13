@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Absensi Event Natal 2025 (Realtime Sync)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
+    <style>
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
+        .animate-pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .animate-spin { animation: spin 1s linear infinite; }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-red-50 via-green-50 to-red-50">
+    <div class="fixed top-0 left-0 w-full pointer-events-none z-0 opacity-20">
+        <div class="text-6xl">🎄 ⭐ 🎅 ❄️ 🔔 🎁 ⛄ 🦌</div>
+    </div>
+
+    <div id="app" class="relative z-10 container mx-auto px-4 py-8 max-w-4xl">
+        <div class="flex justify-center items-center h-screen" id="loading">
+            <div class="text-2xl font-bold text-gray-600 animate-pulse">Menghubungkan ke Server... 🔄</div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Import fungsi-fungsi Firebase yang dibutuhkan
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, push, set, onValue, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        // --- KONFIGURASI FIREBASE (GANTI BAGIAN INI DENGAN PUNYA ANDA) ---
+        // Cara dapat: Firebase Console -> Project Settings -> General -> Your Apps
+        const firebaseConfig = {
+                               apiKey: "AIzaSyBzka8Ps_nf-8zDA2tMDmqEMw6zMoy3aeM",
+                               authDomain: "eventnatal2025.firebaseapp.com",
+  
+       // 👇 INI BAGIAN YANG BARU SAJA ANDA TAMBAHKAN
+              databaseURL: "https://eventnatal2025-default-rtdb.asia-southeast1.firebasedatabase.app/",
+  
+              projectId: "eventnatal2025",
+              storageBucket: "eventnatal2025.firebasestorage.app",
+              messagingSenderId: "961570070334",
+              appId: "1:961570070334:web:888638e9de275e27b2566f",
+              measurementId: "G-QX5GJPEDCF"
+              };
+        // ------------------------------------------------------------------
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // State Management
+        let state = {
+            participants: [],
+            attendanceRecords: [],
+            activeTab: 'register',
+            scanning: false,
+            scanResult: null,
+            cameraError: null
+        };
+
+        let videoStream = null;
+        let scanInterval = null;
+
+        // --- DATABASE LISTENERS (REALTIME SYNC) ---
+        // Fungsi ini akan berjalan otomatis setiap ada data berubah di server
+        function initRealtimeListeners() {
+            const participantsRef = ref(db, 'participants');
+            const attendanceRef = ref(db, 'attendance');
+
+            // Dengar perubahan data peserta
+            onValue(participantsRef, (snapshot) => {
+                const data = snapshot.val();
+                state.participants = data ? Object.values(data) : [];
+                render();
+            });
+
+            // Dengar perubahan data kehadiran
+            onValue(attendanceRef, (snapshot) => {
+                const data = snapshot.val();
+                state.attendanceRecords = data ? Object.values(data) : [];
+                render();
+                
+                // Hilangkan loading screen jika data sudah masuk
+                const loading = document.getElementById('loading');
+                if(loading) loading.style.display = 'none';
+            });
+        }
+
+        // --- LOGIC APLIKASI ---
+
+        // Helper: Format Tanggal Indonesia
+        window.getFormattedDate = () => {
+            return new Date().toLocaleString('id-ID', { 
+                timeZone: 'Asia/Jakarta',
+                day: '2-digit', month: 'long', year: 'numeric',
+                hour: '2-digit', minute: '2-digit', second: '2-digit'
+            });
+        };
+
+        // Generate QR URL
+        window.generateQRCode = (text, size = 400) => {
+            return `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(text)}`;
+        };
+
+        // Tambah Peserta (Kirim ke Firebase)
+        window.addParticipant = () => {
+            const input = document.getElementById('newName');
+            const name = input.value.trim();
+            if (!name) return;
+
+            const newId = Date.now().toString();
+            const participantData = {
+                id: newId,
+                name: name,
+                qrCode: `NATAL-${newId}`,
+                registeredAt: window.getFormattedDate(), // Waktu Realtime Client
+                timestamp: Date.now() // Timestamp murni untuk sorting
+            };
+
+            // Simpan ke Firebase (otomatis sync ke semua device)
+            push(ref(db, 'participants'), participantData)
+                .then(() => {
+                    alert(`✅ ${name} berhasil didaftarkan!`);
+                    input.value = '';
+                })
+                .catch((error) => alert('❌ Gagal menyimpan: ' + error.message));
+        };
+
+        // Check-in Logic (Kirim ke Firebase)
+        window.checkIn = (participantId) => {
+            const participant = state.participants.find(p => p.id === participantId);
+            if (!participant) return;
+
+            // Cek duplikasi di lokal dulu (Firebase juga bisa validasi rules, tapi ini utk UX)
+            const alreadyCheckedIn = state.attendanceRecords.find(r => r.participantId === participantId);
+            if (alreadyCheckedIn) {
+                state.scanResult = {
+                    success: false,
+                    message: `⚠️ ${participant.name} SUDAH check-in sebelumnya!`,
+                    time: alreadyCheckedIn.timestamp
+                };
+                render();
+                setTimeout(() => { state.scanResult = null; render(); }, 3000);
+                return;
+            }
+
+            const recordData = {
+                id: Date.now().toString(),
+                participantId: participant.id,
+                name: participant.name,
+                timestamp: window.getFormattedDate(), // Waktu Realtime saat Scan
+                serverTime: Date.now()
+            };
+
+            // Kirim data absensi ke Firebase
+            push(ref(db, 'attendance'), recordData)
+                .then(() => {
+                    state.scanResult = {
+                        success: true,
+                        message: `✅ ${participant.name} BERHASIL Check-in!`,
+                        time: recordData.timestamp
+                    };
+                    render();
+                    
+                    // Mainkan suara sukses (opsional UX)
+                    // const audio = new Audio('path/to/success.mp3'); audio.play();
+
+                    setTimeout(() => { state.scanResult = null; render(); }, 3000);
+                })
+                .catch((err) => alert('Gagal checkin: ' + err.message));
+        };
+
+        // Import CSV Logic
+        window.handleImportFile = (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const text = e.target.result;
+                const lines = text.split('\n').filter(line => line.trim());
+                const startIndex = lines[0].toLowerCase().includes('nama') ? 1 : 0;
+                
+                let successCount = 0;
+                
+                lines.slice(startIndex).forEach((line, idx) => {
+                    const name = line.trim().replace(/,.*$/, '').replace(/"/g, '');
+                    if (name) {
+                        const newId = `${Date.now()}-${idx}`;
+                        const pData = {
+                            id: newId,
+                            name: name,
+                            qrCode: `NATAL-${newId}`,
+                            registeredAt: window.getFormattedDate(),
+                            timestamp: Date.now()
+                        };
+                        // Push satu per satu (bisa dioptimasi pakai update(), tapi push aman untuk pemula)
+                        push(ref(db, 'participants'), pData);
+                        successCount++;
+                    }
+                });
+                alert(`Proses import ${successCount} data sedang berjalan di background...`);
+            };
+            reader.readAsText(file);
+            event.target.value = '';
+        }
+
+        // --- FUNGSI KAMERA & UTILITAS (Sama seperti sebelumnya, disesuaikan context window) ---
+        
+        window.startScanning = async () => {
+            state.cameraError = null;
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: 'environment' } 
+                });
+                videoStream = stream;
+                state.scanning = true;
+                render();
+                
+                const video = document.getElementById('videoElement');
+                video.srcObject = stream;
+                video.setAttribute('playsinline', 'true');
+                await video.play();
+                startQRScanning();
+            } catch (err) {
+                state.cameraError = err.message;
+                alert('Gagal akses kamera. Pastikan izin diberikan dan menggunakan HTTPS.');
+                render();
+            }
+        };
+
+        window.stopScanning = () => {
+            if (videoStream) {
+                videoStream.getTracks().forEach(track => track.stop());
+                videoStream = null;
+            }
+            if (scanInterval) {
+                clearInterval(scanInterval);
+                scanInterval = null;
+            }
+            state.scanning = false;
+            state.scanResult = null;
+            render();
+        };
+
+        window.startQRScanning = () => {
+            const video = document.getElementById('videoElement');
+            const canvas = document.getElementById('canvasElement');
+            const ctx = canvas.getContext('2d');
+
+            scanInterval = setInterval(() => {
+                if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: "dontInvert" });
+                    
+                    if (code && code.data) {
+                        processQRCode(code.data);
+                        window.stopScanning();
+                    }
+                }
+            }, 100);
+        };
+
+        window.processQRCode = (qrText) => {
+            // Cari di state yang sudah tersinkron dengan firebase
+            const participant = state.participants.find(p => p.qrCode === qrText);
+            if (!participant) {
+                alert('QR Code tidak dikenali!');
+                return;
+            }
+            window.checkIn(participant.id);
+        };
+
+        window.setTab = (tab) => {
+            state.activeTab = tab;
+            render();
+        };
+
+        window.downloadAllQR = () => {
+            state.participants.forEach((p, index) => {
+                setTimeout(() => {
+                    const link = document.createElement('a');
+                    link.download = `QR-${p.name.replace(/\s+/g, '_')}.png`;
+                    link.href = window.generateQRCode(p.qrCode, 400);
+                    link.click();
+                }, index * 500); // Delay agak lama biar browser gak crash
+            });
+        };
+
+        window.exportData = (type) => {
+            let content = '', filename = '';
+            if(type === 'participants') {
+                const headers = ['No,Nama,QR Code,Waktu Daftar,Status'];
+                const rows = state.participants.map((p, i) => {
+                    const status = state.attendanceRecords.find(r => r.participantId === p.id) ? 'Hadir' : 'Belum';
+                    return `${i+1},"${p.name}",${p.qrCode},"${p.registeredAt}",${status}`;
+                });
+                content = headers.concat(rows).join('\n');
+                filename = 'Peserta_Natal.csv';
+            } else {
+                const headers = ['No,Nama,Waktu Check-in'];
+                const rows = state.attendanceRecords.map((r, i) => `${i+1},"${r.name}","${r.timestamp}"`);
+                content = headers.concat(rows).join('\n');
+                filename = 'Absensi_Natal.csv';
+            }
+            
+            const blob = new Blob(['\uFEFF' + content], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = filename;
+            link.click();
+        };
+
+        // --- RENDER FUNCTIONS (UI) ---
+        // Saya buat global agar bisa dipanggil di mana saja
+        window.render = () => {
+            const app = document.getElementById('app');
+            // Jika belum load data firebase, jangan render dulu
+            if (!app) return;
+
+            app.innerHTML = `
+                <div class="bg-gradient-to-r from-red-600 to-green-600 rounded-2xl shadow-2xl p-6 mb-6 text-white text-center relative overflow-hidden">
+                    <div class="absolute top-0 right-0 opacity-10 text-8xl transform translate-x-4 -translate-y-4">🎅</div>
+                    <h1 class="text-3xl md:text-4xl font-bold mb-2">Event Natal 2025</h1>
+                    <p class="text-sm md:text-lg opacity-90">Realtime Database Sync Active 🟢</p>
+                    
+                    <div class="mt-6 flex justify-center gap-4 md:gap-12">
+                        <div class="bg-white/20 rounded-lg p-3 backdrop-blur-sm min-w-[100px]">
+                            <div class="font-bold text-3xl">${state.participants.length}</div>
+                            <div class="text-xs uppercase tracking-wider">Terdaftar</div>
+                        </div>
+                        <div class="bg-white/20 rounded-lg p-3 backdrop-blur-sm min-w-[100px]">
+                            <div class="font-bold text-3xl">${state.attendanceRecords.length}</div>
+                            <div class="text-xs uppercase tracking-wider">Hadir</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex bg-white rounded-xl shadow-md p-1 mb-6">
+                    <button onclick="setTab('register')" class="flex-1 py-3 rounded-lg text-sm md:text-base font-semibold transition-all ${state.activeTab === 'register' ? 'bg-red-100 text-red-700 shadow-inner' : 'text-gray-500 hover:bg-gray-50'}">📋 Daftar</button>
+                    <button onclick="setTab('scan')" class="flex-1 py-3 rounded-lg text-sm md:text-base font-semibold transition-all ${state.activeTab === 'scan' ? 'bg-green-100 text-green-700 shadow-inner' : 'text-gray-500 hover:bg-gray-50'}">📷 Scan</button>
+                    <button onclick="setTab('attendance')" class="flex-1 py-3 rounded-lg text-sm md:text-base font-semibold transition-all ${state.activeTab === 'attendance' ? 'bg-blue-100 text-blue-700 shadow-inner' : 'text-gray-500 hover:bg-gray-50'}">📝 Data</button>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-xl p-4 md:p-6 min-h-[400px]">
+                    ${renderTabContent()}
+                </div>
+                
+                <div class="text-center mt-6 text-gray-400 text-xs">
+                    Powered by Firebase Realtime DB & Tailwind
+                </div>
+            `;
+        };
+
+        function renderTabContent() {
+            if (state.activeTab === 'register') return renderRegisterTab();
+            if (state.activeTab === 'scan') return renderScanTab();
+            return renderAttendanceTab();
+        }
+
+        function renderRegisterTab() {
+            return `
+                <div class="flex gap-2 mb-4">
+                    <input type="text" id="newName" placeholder="Nama Peserta Baru..." class="flex-1 px-4 py-3 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none" onkeypress="if(event.key==='Enter') addParticipant()">
+                    <button onclick="addParticipant()" class="bg-red-600 text-white px-6 rounded-lg font-bold hover:bg-red-700">💾</button>
+                </div>
+                <div class="flex gap-2 mb-6 text-sm">
+                    <button onclick="document.getElementById('fileInput').click()" class="flex-1 bg-gray-100 text-gray-700 py-2 rounded border hover:bg-gray-200">📂 Import CSV</button>
+                    <input type="file" id="fileInput" class="hidden" accept=".csv" onchange="handleImportFile(event)">
+                    <button onclick="exportData('participants')" class="flex-1 bg-purple-100 text-purple-700 py-2 rounded border border-purple-200 hover:bg-purple-200">📤 Export</button>
+                </div>
+                <div class="space-y-3 max-h-[500px] overflow-y-auto">
+                    ${state.participants.slice().reverse().map(p => {
+                        const isHadir = state.attendanceRecords.find(r => r.participantId === p.id);
+                        return `
+                        <div class="flex justify-between items-center p-3 border rounded-lg ${isHadir ? 'bg-green-50 border-green-200' : 'bg-gray-50'}">
+                            <div>
+                                <div class="font-bold text-gray-800">${p.name}</div>
+                                <div class="text-xs text-gray-500">${p.registeredAt}</div>
+                            </div>
+                            <div class="text-right">
+                                ${isHadir ? '<span class="text-xs bg-green-200 text-green-800 px-2 py-1 rounded-full">Hadir</span>' : `<span class="text-xs text-gray-400 font-mono">${p.qrCode}</span>`}
+                            </div>
+                        </div>`;
+                    }).join('')}
+                </div>
+                ${state.participants.length > 0 ? `<button onclick="downloadAllQR()" class="w-full mt-4 py-3 text-red-600 text-sm border border-red-200 rounded-lg hover:bg-red-50">🖨️ Download Semua QR</button>` : ''}
+            `;
+        }
+
+        function renderScanTab() {
+            if(!state.scanning) {
+                return `
+                    <div class="text-center py-8">
+                        <button onclick="startScanning()" class="bg-green-600 text-white w-full py-4 rounded-xl text-xl font-bold shadow-lg hover:bg-green-700 transform transition hover:scale-105 mb-6">
+                            📷 Buka Kamera
+                        </button>
+                        
+                        <div class="border-t pt-4 text-left">
+                            <h3 class="font-bold text-gray-700 mb-2">Manual Check-in (Tap Nama):</h3>
+                            <div class="grid grid-cols-1 gap-2 max-h-64 overflow-y-auto">
+                                ${state.participants.map(p => {
+                                    const done = state.attendanceRecords.find(r => r.participantId === p.id);
+                                    return `<button onclick="checkIn('${p.id}')" ${done ? 'disabled' : ''} class="text-left px-3 py-2 rounded border ${done ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'hover:bg-green-50 border-gray-200'}">
+                                        ${done ? '✅' : '⬜'} ${p.name}
+                                    </button>`
+                                }).join('')}
+                            </div>
+                        </div>
+                    </div>
+                    ${renderScanResult()}
+                `;
+            }
+            return `
+                <div class="relative bg-black rounded-lg overflow-hidden shadow-2xl">
+                    <video id="videoElement" class="w-full h-64 object-cover"></video>
+                    <canvas id="canvasElement" class="hidden"></canvas>
+                    <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                        <div class="w-48 h-48 border-4 border-green-500 rounded-lg opacity-50 animate-pulse"></div>
+                    </div>
+                </div>
+                <button onclick="stopScanning()" class="w-full mt-4 bg-red-600 text-white py-3 rounded-lg font-bold">❌ Stop Kamera</button>
+            `;
+        }
+
+        function renderScanResult() {
+            if(!state.scanResult) return '';
+            const color = state.scanResult.success ? 'bg-green-100 border-green-500 text-green-800' : 'bg-red-100 border-red-500 text-red-800';
+            return `
+                <div class="fixed top-4 left-4 right-4 z-50 animate-pulse">
+                    <div class="${color} border-l-4 p-4 rounded shadow-2xl flex flex-col items-center justify-center">
+                        <div class="text-xl font-bold mb-1">${state.scanResult.message}</div>
+                        <div class="text-sm font-mono">${state.scanResult.time}</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderAttendanceTab() {
+            return `
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="font-bold text-gray-700">Log Kehadiran Realtime</h3>
+                    <button onclick="exportData('attendance')" class="text-sm text-blue-600 font-semibold hover:underline">Download CSV</button>
+                </div>
+                <div class="space-y-2">
+                    ${state.attendanceRecords.slice().reverse().map((r, i) => `
+                        <div class="flex items-center gap-3 p-3 bg-blue-50 border border-blue-100 rounded-lg">
+                            <div class="bg-blue-600 text-white w-8 h-8 flex items-center justify-center rounded-full font-bold text-sm">${state.attendanceRecords.length - i}</div>
+                            <div class="flex-1">
+                                <div class="font-bold text-gray-800">${r.name}</div>
+                                <div class="text-xs text-blue-600">🕒 ${r.timestamp}</div>
+                            </div>
+                        </div>
+                    `).join('')}
+                    ${state.attendanceRecords.length === 0 ? '<div class="text-center text-gray-400 py-10">Belum ada data hadir</div>' : ''}
+                </div>
+            `;
+        }
+
+        // Start App
+        initRealtimeListeners();
+
+    </script>
+</body>
+</html>
