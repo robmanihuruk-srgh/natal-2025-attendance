@@ -20,7 +20,12 @@
         #reader video { object-fit: cover; border-radius: 0.5rem; }
         #reader__dashboard_section_csr span, #reader__dashboard_section_swaplink { display: none !important; }
         
-        img.qr-code { image-rendering: pixelated; }
+        /* Agar QR Code Tajam & Jelas */
+        img.qr-code { 
+            image-rendering: pixelated; 
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
+        }
     </style>
 </head>
 <body class="min-h-screen bg-gray-50 text-gray-800">
@@ -89,7 +94,7 @@
                 <div class="flex gap-4">
                     <div class="flex-1">
                         <div class="text-xs text-gray-400 uppercase tracking-wider font-bold mb-1">Kelas</div>
-                        <div id="confirmClass" class="text-md font-bold text-purple-600">Umum</div>
+                        <div id="confirmClass" class="text-md font-bold text-purple-600">Daud</div>
                     </div>
                     <div class="flex-1">
                         <div class="text-xs text-gray-400 uppercase tracking-wider font-bold mb-1">Sektor</div>
@@ -184,7 +189,10 @@
         updateClock();
 
         window.getFormattedDate = () => new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
-        window.getQRUrl = (text) => `https://api.qrserver.com/v1/create-qr-code/?size=600x600&margin=25&qzone=4&data=${encodeURIComponent(text)}&bgcolor=ffffff&color=000000&format=png`;
+        
+        // --- IMPROVEMENT QR GENERATOR (Ecc High) ---
+        // Parameter &ecc=H membuat QR Code lebih robust terhadap kerusakan/pantulan cahaya
+        window.getQRUrl = (text) => `https://api.qrserver.com/v1/create-qr-code/?size=600x600&margin=20&ecc=H&data=${encodeURIComponent(text)}&bgcolor=ffffff&color=000000&format=png`;
 
         // --- FIREBASE LISTENERS ---
         function initListeners() {
@@ -206,7 +214,7 @@
             document.getElementById('statPresent').innerText = state.attendanceRecords.length;
         }
 
-        // --- LOGIKA PENDAFTARAN & KONFIRMASI (UPDATED WITH CLASS) ---
+        // --- LOGIKA PENDAFTARAN & KONFIRMASI ---
         window.prepareRegistration = () => {
             const inputName = document.getElementById('newName');
             const inputClass = document.getElementById('newClass');
@@ -221,10 +229,7 @@
             if (!classGrade) { alert("Mohon pilih Kelas!"); return; }
             if (!sector) { alert("Mohon pilih Sektor!"); return; }
 
-            // Set Data Sementara
             tempParticipantData = { name, classGrade, sector };
-            
-            // Update Modal Konfirmasi
             document.getElementById('confirmName').innerText = name;
             document.getElementById('confirmClass').innerText = classGrade;
             document.getElementById('confirmSector').innerText = sector;
@@ -249,18 +254,16 @@
             push(ref(db, 'participants'), {
                 id: newId, 
                 name: name, 
-                classGrade: classGrade, // Simpan Kelas
+                classGrade: classGrade, 
                 sector: sector, 
                 qrCode: qrCode,
                 registeredAt: window.getFormattedDate(), 
                 timestamp: Date.now()
             }).then(() => {
                 window.closeConfirmModal();
-                // Reset Form
                 document.getElementById('newName').value = '';
                 document.getElementById('newClass').value = '';
                 document.getElementById('newSector').value = ''; 
-                
                 window.showTicket(name, classGrade, sector, qrCode);
                 tempParticipantData = null;
             });
@@ -279,7 +282,7 @@
                 push(ref(db, 'attendance'), {
                     id: Date.now().toString(), participantId: participant.id, name: participant.name,
                     sector: participant.sector || '-', 
-                    classGrade: participant.classGrade || '-', // Simpan kelas di log
+                    classGrade: participant.classGrade || '-',
                     timestamp: window.getFormattedDate()
                 });
                 state.scanResult = { success: true, msg: `✅ ${participant.name} Masuk!`, time: window.getFormattedDate() };
@@ -300,7 +303,7 @@
             }, 3000);
         };
 
-        // --- EXPORT & IMPORT (UPDATED WITH CLASS) ---
+        // --- EXPORT & IMPORT ---
         window.exportData = (type) => {
             let csvContent = "data:text/csv;charset=utf-8,";
             if (type === 'participants') {
@@ -340,13 +343,12 @@
                 rows.forEach((row, index) => {
                     const cleanRow = row.trim();
                     if (!cleanRow) return;
-                    if (index === 0 && cleanRow.toLowerCase().includes('nama')) return; // Skip Header
+                    if (index === 0 && cleanRow.toLowerCase().includes('nama')) return; 
 
-                    // Format CSV: Nama, Kelas, Sektor
                     const cols = cleanRow.split(/[,;]/);
                     const name = cols[0]?.replace(/"/g, '').trim();
-                    const classGrade = cols[1]?.replace(/"/g, '').trim() || 'Umum'; // Default Kelas
-                    const sector = cols[2]?.replace(/"/g, '').trim() || 'Sektor 1'; // Default Sektor
+                    const classGrade = cols[1]?.replace(/"/g, '').trim() || 'Daud'; // Default Kelas Baru
+                    const sector = cols[2]?.replace(/"/g, '').trim() || 'Sektor 1'; 
 
                     if (name) {
                         const newId = (Date.now() + index).toString(); 
@@ -364,7 +366,7 @@
             reader.readAsText(file);
         };
 
-        // --- SCANNER LOGIC ---
+        // --- SCANNER LOGIC (IMPROVED FOCUS) ---
         window.startScanning = () => {
             if(state.scanning) return;
             state.scanning = true;
@@ -372,9 +374,13 @@
 
             setTimeout(() => {
                 const config = { 
-                    fps: 20, qrbox: { width: 250, height: 250 }, aspectRatio: 1.0,
+                    fps: 20, // 20 FPS agar lebih cepat tangkap gambar
+                    qrbox: { width: 250, height: 250 }, 
+                    aspectRatio: 1.0,
+                    // Memaksa kamera belakang dengan fokus continous
                     videoConstraints: { facingMode: "environment", focusMode: "continuous" }
                 };
+                
                 html5QrcodeScanner = new Html5QrcodeScanner("reader", config, false);
                 html5QrcodeScanner.render((decodedText) => {
                     html5QrcodeScanner.pause(); 
@@ -445,7 +451,7 @@
                     <div>
                         <div class="font-bold text-gray-800">${p.name}</div>
                         <div class="flex gap-2 mt-1">
-                            <span class="text-[10px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded font-bold">${p.classGrade || 'Umum'}</span>
+                            <span class="text-[10px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded font-bold">${p.classGrade || 'Daud'}</span>
                             <span class="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded font-bold">${p.sector || 'Sektor -'}</span>
                         </div>
                     </div>
@@ -484,19 +490,10 @@
                             <div class="relative flex-1">
                                 <select id="newClass" class="w-full bg-gray-50 border-2 border-gray-100 rounded-xl px-4 py-3 font-bold text-gray-600 focus:outline-none focus:border-red-500 transition-colors appearance-none">
                                     <option value="" disabled selected>Pilih Kelas...</option>
-                                    <option value="Balita">Balita</option>
-                                    <option value="TK">TK</option>
-                                    <option value="1 SD">1 SD</option>
-                                    <option value="2 SD">2 SD</option>
-                                    <option value="3 SD">3 SD</option>
-                                    <option value="4 SD">4 SD</option>
-                                    <option value="5 SD">5 SD</option>
-                                    <option value="6 SD">6 SD</option>
-                                    <option value="SMP">SMP</option>
-                                    <option value="SMA/K">SMA/K</option>
-                                    <option value="Mahasiswa">Mahasiswa</option>
-                                    <option value="Umum">Umum</option>
-                                    <option value="Lansia">Lansia</option>
+                                    <option value="Daud">Daud</option>
+                                    <option value="Daniel">Daniel</option>
+                                    <option value="Paulus">Paulus</option>
+                                    <option value="Ester">Ester</option>
                                 </select>
                                 <div class="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-gray-500">▼</div>
                             </div>
@@ -520,7 +517,7 @@
                                 <div>
                                     <div class="font-bold text-gray-800">${p.name}</div>
                                     <div class="flex gap-2 mt-1">
-                                        <div class="text-[10px] text-white bg-purple-500 px-2 py-0.5 rounded-full inline-block font-bold">${p.classGrade || 'Umum'}</div>
+                                        <div class="text-[10px] text-white bg-purple-500 px-2 py-0.5 rounded-full inline-block font-bold">${p.classGrade || 'Daud'}</div>
                                         <div class="text-[10px] text-white bg-blue-500 px-2 py-0.5 rounded-full inline-block font-bold">${p.sector || 'Sektor ?'}</div>
                                     </div>
                                 </div>
@@ -537,6 +534,8 @@
                             <button onclick="startScanning()" class="bg-green-600 text-white w-full py-8 rounded-2xl text-2xl font-bold shadow-xl hover:bg-green-700 hover:scale-[1.01] transition-all mb-6 flex flex-col items-center gap-3">
                                 <span class="text-5xl">📷</span><span>Mulai Scan QR</span>
                             </button>
+                            <p class="text-xs text-gray-500 mb-6 bg-yellow-100 inline-block px-3 py-1 rounded-full">💡 Tips: Jaga jarak 30cm dari layar Laptop</p>
+                            
                             <div class="bg-white rounded-3xl p-6 shadow-sm text-left">
                                 <div class="flex items-center gap-2 mb-4"><span class="text-xl">🔍</span><h3 class="font-bold text-gray-700">Check-in Manual</h3></div>
                                 <input type="text" placeholder="Cari nama peserta..." class="w-full bg-gray-50 border-b-2 border-gray-200 px-4 py-3 mb-4 focus:outline-none focus:border-blue-500 transition-colors" oninput="handleSearch(this)">
@@ -596,7 +595,7 @@
         // --- MODAL & RESET ---
         window.showTicket = (name, classGrade, sector, qr) => {
             document.getElementById('modalName').innerText = name;
-            document.getElementById('modalClass').innerText = classGrade || 'Umum';
+            document.getElementById('modalClass').innerText = classGrade || 'Daud';
             document.getElementById('modalSector').innerText = sector || 'Sektor -';
             document.getElementById('modalQR').src = window.getQRUrl(qr);
             const m = document.getElementById('ticketModal');
