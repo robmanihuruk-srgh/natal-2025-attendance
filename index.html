@@ -16,27 +16,23 @@
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         .animate-spin { animation: spin 1s linear infinite; }
         
-        /* Style Scanner untuk Laptop */
+        /* Style Scanner Stabil untuk Laptop */
         #reader { 
             width: 100%; 
             border-radius: 1rem; 
             overflow: hidden; 
-            background: black; 
+            background: #000; 
             border: 4px solid #ef4444; 
             position: relative;
+            min-height: 300px;
         }
+        /* Membalikkan video kamera laptop (mirror effect) agar natural */
         #reader video { 
             object-fit: cover; 
             border-radius: 0.5rem; 
-            /* Membalikkan efek cermin pada webcam laptop agar natural saat scan */
             transform: scaleX(-1); 
         }
         
-        /* Sembunyikan elemen bawaan library yang mengganggu */
-        #reader__dashboard_section_csr span, 
-        #reader__dashboard_section_swaplink { display: none !important; }
-        
-        /* Agar QR Code Tajam (Pixelated) */
         img.qr-code { 
             image-rendering: pixelated; 
             image-rendering: -moz-crisp-edges;
@@ -173,7 +169,7 @@
         };
         
         let tempParticipantData = null; 
-        let html5QrcodeScanner = null;
+        let html5QrCode = null; // Variable Scanner Baru
         
         // Audio Beep
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -201,9 +197,8 @@
 
         window.getFormattedDate = () => new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
         
-        // --- IMPROVEMENT QR GENERATOR (LOW DENSITY FOR LAPTOP) ---
-        // Menggunakan ECC=L (Low) agar pola QR lebih besar/renggang, mudah dibaca webcam laptop resolusi rendah
-        window.getQRUrl = (text) => `https://api.qrserver.com/v1/create-qr-code/?size=500x500&margin=25&ecc=L&data=${encodeURIComponent(text)}&bgcolor=ffffff&color=000000&format=png`;
+        // QR Generator: Low ECC (L) agar mudah dibaca webcam laptop resolusi rendah
+        window.getQRUrl = (text) => `https://api.qrserver.com/v1/create-qr-code/?size=500x500&margin=20&ecc=L&data=${encodeURIComponent(text)}&bgcolor=ffffff&color=000000&format=png`;
 
         // --- FIREBASE LISTENERS ---
         function initListeners() {
@@ -367,42 +362,64 @@
             reader.readAsText(file);
         };
 
-        // --- SCANNER LOGIC (DIOPTIMALKAN UNTUK LAPTOP & HP) ---
+        // --- SCANNER LOGIC (DIRECT MODE - SUPER FIX FOR LAPTOP) ---
+        // Kita menggunakan Html5Qrcode (bukan Scanner UI) untuk kontrol penuh
+        
         window.startScanning = () => {
             if(state.scanning) return;
             state.scanning = true;
             render(); 
 
             setTimeout(() => {
-                // CONFIG KHUSUS: Menghilangkan constraint "environment" agar Laptop bisa pakai webcam default
-                // FPS dinaikkan agar video tidak patah-patah
-                const config = { 
-                    fps: 20, 
-                    qrbox: 250,
-                    // videoConstraints DIBUANG agar library mendeteksi kamera apa saja yg tersedia (Depan/Belakang)
-                };
+                html5QrCode = new Html5Qrcode("reader");
                 
-                html5QrcodeScanner = new Html5QrcodeScanner("reader", config, false);
-                html5QrcodeScanner.render((decodedText) => {
-                    html5QrcodeScanner.pause(); 
-                    window.processQRCode(decodedText);
-                    setTimeout(() => { html5QrcodeScanner.resume(); }, 2000);
-                }, (err) => {});
+                // Konfigurasi Scan
+                const config = { fps: 10, qrbox: { width: 250, height: 250 } };
                 
-                const cleanInterval = setInterval(() => {
-                   const links = document.querySelectorAll('#reader a');
-                   links.forEach(l => l.style.display = 'none');
-                   if(document.getElementById('reader__dashboard_section_swaplink')) clearInterval(cleanInterval);
-                }, 100);
+                // Start Scanning (Menggunakan kamera default 'user' untuk laptop)
+                // facingMode: "user" biasanya adalah webcam laptop
+                html5QrCode.start({ facingMode: "user" }, config, (decodedText, decodedResult) => {
+                    // Success Callback
+                    if(state.scanning) {
+                        // Pause sejenak agar tidak scan berulang cepat
+                        html5QrCode.pause(); 
+                        window.processQRCode(decodedText);
+                        
+                        setTimeout(() => {
+                            // Resume jika masih di tab scan
+                            if(state.activeTab === 'scan' && state.scanning) {
+                                html5QrCode.resume();
+                            }
+                        }, 2000);
+                    }
+                }, (errorMessage) => {
+                    // Error Callback (biarkan kosong agar tidak spam console)
+                }).catch((err) => {
+                    console.error("Gagal start kamera:", err);
+                    alert("Kamera Laptop gagal dibuka. Pastikan izin kamera diberikan.");
+                    state.scanning = false;
+                    render();
+                });
+
             }, 100);
         };
 
         window.stopScanning = () => {
-            if (html5QrcodeScanner) {
-                html5QrcodeScanner.clear().then(() => {
-                    html5QrcodeScanner = null; state.scanning = false; render();
-                }).catch(err => { state.scanning = false; render(); });
-            } else { state.scanning = false; render(); }
+            if (html5QrCode) {
+                html5QrCode.stop().then(() => {
+                    html5QrCode.clear();
+                    html5QrCode = null;
+                    state.scanning = false;
+                    render();
+                }).catch(err => {
+                    console.log("Stop error", err);
+                    state.scanning = false;
+                    render();
+                });
+            } else {
+                state.scanning = false;
+                render();
+            }
         };
 
         window.processQRCode = (text) => {
@@ -528,7 +545,7 @@
                     content.innerHTML = `
                          <div class="text-center py-10">
                             <button onclick="startScanning()" class="bg-green-600 text-white w-full py-8 rounded-2xl text-2xl font-bold shadow-xl hover:bg-green-700 hover:scale-[1.01] transition-all mb-6 flex flex-col items-center gap-3">
-                                <span class="text-5xl">📷</span><span>Mulai Scan QR</span>
+                                <span class="text-5xl">📷</span><span>Mulai Scan QR (Laptop)</span>
                             </button>
                             <div class="bg-white rounded-3xl p-6 shadow-sm text-left">
                                 <div class="flex items-center gap-2 mb-4"><span class="text-xl">🔍</span><h3 class="font-bold text-gray-700">Check-in Manual</h3></div>
@@ -579,6 +596,7 @@
             }
         };
 
+        // --- MODAL & RESET ---
         window.showTicket = (name, classGrade, sector, qr) => {
             document.getElementById('modalName').innerText = name;
             document.getElementById('modalClass').innerText = classGrade || 'Daud';
