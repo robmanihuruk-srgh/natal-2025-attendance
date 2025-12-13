@@ -12,30 +12,41 @@
     <style>
         body { font-family: 'Inter', sans-serif; }
         
-        /* Scanner Styling Professional */
+        /* CSS Scanner Khusus Laptop */
         #reader { 
             width: 100%; 
-            background: black; 
+            background: #000; 
             border-radius: 12px;
-            overflow: hidden;
-            position: relative;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            border: none;
         }
         
+        /* Mengatur video agar pas dan flip horizontal (Cermin) agar natural bagi panitia */
         #reader video { 
             object-fit: cover; 
-            border-radius: 12px; 
+            border-radius: 12px;
+            transform: scaleX(-1); 
         }
 
-        /* Hilangkan elemen bawaan library yang tidak perlu */
+        /* Menyembunyikan link iklan bawaan library */
         #reader__dashboard_section_csr span, 
         #reader__dashboard_section_swaplink { display: none !important; }
+        
+        /* Mempercantik Tombol Permission bawaan library */
+        #reader__filescan_input_label { display: none; } /* Hide file scan option */
+        #reader__dashboard_section_csr button {
+            background-color: #16a34a;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: none;
+            font-weight: bold;
+            margin-top: 10px;
+            cursor: pointer;
+        }
 
         /* Animasi */
         @keyframes pulse-soft { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
         .animate-pulse-soft { animation: pulse-soft 2s infinite; }
-        
-        /* QR Code Pixelation agar tajam */
         img.qr-code { image-rendering: pixelated; }
     </style>
 </head>
@@ -152,9 +163,7 @@
             attendance: [],
             tab: 'register',
             scanner: null,
-            scanResult: null,
-            tempData: null,
-            cameras: []
+            tempData: null
         };
 
         // --- AUDIO ---
@@ -179,8 +188,8 @@
         setInterval(getClock, 1000); getClock();
 
         const fmtDate = () => new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
-        // QR Generator: Size Besar + Margin Besar + ECC Low (Mudah dibaca laptop)
-        const getQR = (txt) => `https://api.qrserver.com/v1/create-qr-code/?size=500x500&margin=25&ecc=L&color=000000&bgcolor=ffffff&data=${encodeURIComponent(txt)}`;
+        // QR Generator: Low ECC untuk mudah dibaca laptop + Size Besar
+        const getQR = (txt) => `https://api.qrserver.com/v1/create-qr-code/?size=500x500&margin=20&ecc=L&color=000000&bgcolor=ffffff&data=${encodeURIComponent(txt)}`;
 
         // --- DB LISTENERS ---
         onValue(ref(db, 'participants'), s => {
@@ -261,92 +270,59 @@
             }
         };
 
-        // --- SCANNER SYSTEM (PROFESSIONAL FIX) ---
+        // --- SCANNER SYSTEM (RESTORED TO STANDARD MODE) ---
+        // Ini adalah mode paling kompatibel untuk laptop
         
-        // 1. Get Camera List
-        window.initScannerUI = async () => {
-            try {
-                const devices = await Html5Qrcode.getCameras();
-                state.cameras = devices;
+        window.initScanner = () => {
+            if(state.scanner) return; // Prevent double init
+
+            // Gunakan Html5QrcodeScanner (Versi UI) karena lebih reliable menangani permission browser
+            const config = { 
+                fps: 10, 
+                qrbox: 450, // BOX BESAR agar tidak perlu zoom dekat (Kunci sukses laptop)
+                aspectRatio: 1.0,
+                disableFlip: false // Biarkan default library menangani flip
+            };
+            
+            // Render ke div 'reader'
+            state.scanner = new Html5QrcodeScanner("reader", config, /* verbose= */ false);
+            
+            state.scanner.render((decodedText) => {
+                // Success Callback
+                if(state.scanner) state.scanner.pause(); // Pause biar gak scan berkali2
                 
-                let selectHTML = '<option value="" disabled selected>-- Pilih Kamera Laptop --</option>';
-                if (devices && devices.length) {
-                    devices.forEach(dev => {
-                        selectHTML += `<option value="${dev.id}">${dev.label || `Camera ${dev.id}`}</option>`;
-                    });
+                const p = state.participants.find(x => x.qrCode === decodedText);
+                if(p) {
+                    window.doCheckIn(p.id);
                 } else {
-                    selectHTML = '<option disabled>Kamera tidak ditemukan</option>';
+                    beep('fail');
+                    showScanResult(false, "❌ QR Tidak Dikenal");
                 }
-                document.getElementById('camSelect').innerHTML = selectHTML;
-                
-                // Auto select first camera if available
-                if(devices.length > 0) {
-                    document.getElementById('camSelect').value = devices[0].id;
-                }
-            } catch (err) {
-                alert("Error mendeteksi kamera: " + err);
-            }
+
+                // Resume scanning after delay
+                setTimeout(() => {
+                    if(state.scanner) state.scanner.resume();
+                }, 2500);
+            }, (error) => {
+                // Error callback (ignore)
+            });
         };
 
-        // 2. Start Scanning with Specific Camera
-        window.toggleScanner = () => {
+        window.stopScanner = () => {
             if(state.scanner) {
-                state.scanner.stop().then(() => {
-                    state.scanner.clear();
-                    state.scanner = null;
-                    document.getElementById('btnScan').innerText = "MULAI KAMERA";
-                    document.getElementById('btnScan').classList.replace('bg-red-600', 'bg-green-600');
-                });
-                return;
+                state.scanner.clear().catch(e => console.error(e));
+                state.scanner = null;
             }
-
-            const camId = document.getElementById('camSelect').value;
-            if(!camId) return alert("Pilih kamera terlebih dahulu!");
-
-            state.scanner = new Html5Qrcode("reader");
-            
-            const config = { 
-                fps: 20, // High FPS for fluid scanning
-                qrbox: { width: 300, height: 300 }, // Large scan area
-                aspectRatio: 1.0,
-                disableFlip: false // Allow default mirroring behavior usually preferred on laptops
-            };
-
-            state.scanner.start(
-                camId, 
-                config, 
-                (decodedText) => {
-                    // SUCCESS
-                    state.scanner.pause();
-                    const p = state.participants.find(x => x.qrCode === decodedText);
-                    
-                    if(p) {
-                        window.doCheckIn(p.id);
-                    } else {
-                        beep('fail');
-                        showScanResult(false, "❌ QR Tidak Dikenal");
-                    }
-
-                    setTimeout(() => {
-                        if(state.scanner) state.scanner.resume();
-                    }, 2000); // 2 Detik delay sebelum scan berikutnya
-                },
-                (errorMessage) => {
-                    // Ignore frame errors
-                }
-            ).then(() => {
-                document.getElementById('btnScan').innerText = "MATIKAN KAMERA";
-                document.getElementById('btnScan').classList.replace('bg-green-600', 'bg-red-600');
-            }).catch(err => {
-                alert("Gagal membuka kamera. Pastikan izin browser diberikan.");
-            });
         };
 
         function showScanResult(success, msg) {
             const el = document.getElementById('scanRes');
-            el.innerHTML = msg;
-            el.className = `p-4 rounded-xl font-bold text-center text-white shadow-lg animate-pulse mb-4 ${success ? 'bg-green-500' : 'bg-red-500'}`;
-            setTimeout(() => { el.className = 'hidden'; }, 2000);
+            if(el) {
+                el.innerHTML = msg;
+                el.className = `p-4 rounded-xl font-bold text-center text-white shadow-lg animate-pulse mb-4 ${success ? 'bg-green-500' : 'bg-red-500'}`;
+                el.classList.remove('hidden');
+                setTimeout(() => { el.classList.add('hidden'); }, 2000);
+            }
         }
 
         // --- IMPORT / EXPORT ---
@@ -375,7 +351,7 @@
                     if(n) {
                         const id = (Date.now()+i).toString();
                         push(ref(db, 'participants'), {
-                            id, name: n, classGrade: cl||'Umum', sector: sc||'Sektor 1',
+                            id, name: n, classGrade: cl||'Daud', sector: sc||'Sektor 1',
                             qrCode: `NATAL-${id.slice(-6)}`, registeredAt: fmtDate(), timestamp: Date.now()
                         });
                         c++;
@@ -405,10 +381,9 @@
 
         // --- RENDER SYSTEM ---
         window.setTab = (t) => {
-            if(state.scanner && t !== 'scan') window.toggleScanner(); // Stop camera if leaving tab
+            if(state.tab === 'scan' && t !== 'scan') window.stopScanner();
             state.tab = t;
             
-            // Update Active Tab Style
             ['register','scan','data'].forEach(x => {
                 const btn = document.getElementById(`tab-${x}`);
                 if(x === t) {
@@ -419,8 +394,13 @@
                     btn.classList.remove('bg-red-600','text-white','shadow-xl','-translate-y-1');
                 }
             });
+            
             render();
-            if(t === 'scan') window.initScannerUI(); // Load cameras when entering scan tab
+            
+            // Auto start scanner if tab scan selected
+            if(t === 'scan') {
+                setTimeout(() => window.initScanner(), 100);
+            }
         };
 
         window.render = () => {
@@ -464,21 +444,16 @@
                 `;
             } else if (state.tab === 'scan') {
                 root.innerHTML = `
-                    <div class="bg-white p-6 rounded-2xl shadow-sm text-center mb-6">
-                        <h3 class="font-bold text-gray-700 mb-2">Setup Kamera Laptop</h3>
-                        <p class="text-xs text-gray-400 mb-4">Pilih kamera yang aktif jika default tidak menyala</p>
+                    <div class="bg-white p-4 rounded-2xl shadow-sm text-center mb-6">
+                        <h3 class="font-bold text-gray-700 mb-2">Scanner Laptop</h3>
+                        <p class="text-xs text-gray-400 mb-4">Pastikan browser mengizinkan akses kamera</p>
                         
-                        <div class="flex gap-2 mb-4">
-                            <select id="camSelect" class="flex-1 p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold text-gray-700 outline-none"></select>
-                            <button onclick="window.initScannerUI()" class="bg-gray-100 px-4 rounded-xl">🔄</button>
-                        </div>
+                        <div id="scanRes" class="hidden"></div>
 
-                        <button id="btnScan" onclick="toggleScanner()" class="w-full py-4 bg-green-600 text-white font-extrabold rounded-xl shadow-lg hover:bg-green-700 transition-colors">MULAI KAMERA</button>
+                        <div id="reader" class="mb-4"></div>
+                        
+                        <p class="text-[10px] text-gray-400">Arahkan QR Code Tiket ke Kamera</p>
                     </div>
-
-                    <div id="scanRes" class="hidden"></div>
-
-                    <div id="reader" class="mb-6"></div>
 
                     <div class="bg-white p-4 rounded-2xl shadow-sm">
                         <div class="text-sm font-bold text-gray-400 mb-2 uppercase">Manual Check-In</div>
