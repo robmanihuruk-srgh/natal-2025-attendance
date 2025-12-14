@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Absensi Event Natal 2025</title>
+    <title>Absensi Event Natal 2025 - GKPS Tangerang</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     
@@ -12,39 +12,26 @@
     <style>
         body { font-family: 'Inter', sans-serif; }
         
-        /* CSS Scanner Khusus Laptop */
+        /* CSS Scanner */
         #reader { 
             width: 100%; 
             background: #000; 
             border-radius: 12px;
             border: none;
         }
-        
-        /* Mengatur video agar pas dan flip horizontal (Cermin) agar natural bagi panitia */
         #reader video { 
             object-fit: cover; 
             border-radius: 12px;
             transform: scaleX(-1); 
         }
-
-        /* Menyembunyikan link iklan bawaan library */
         #reader__dashboard_section_csr span, 
         #reader__dashboard_section_swaplink { display: none !important; }
-        
-        /* Mempercantik Tombol Permission bawaan library */
         #reader__filescan_input_label { display: none; } 
         #reader__dashboard_section_csr button {
-            background-color: #16a34a;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 8px;
-            border: none;
-            font-weight: bold;
-            margin-top: 10px;
-            cursor: pointer;
+            background-color: #16a34a; color: white; padding: 8px 16px;
+            border-radius: 8px; border: none; font-weight: bold; margin-top: 10px;
         }
 
-        /* Animasi */
         @keyframes pulse-soft { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
         .animate-pulse-soft { animation: pulse-soft 2s infinite; }
         img.qr-code { image-rendering: pixelated; }
@@ -61,14 +48,14 @@
         
         <div id="loading" class="absolute inset-0 z-50 bg-white flex flex-col justify-center items-center">
             <div class="text-5xl mb-4 animate-bounce">❄️</div>
-            <div class="font-bold text-gray-500">Memuat Sistem...</div>
+            <div class="font-bold text-gray-500">Memuat Sistem GKPS...</div>
         </div>
 
-        <header class="bg-gradient-to-r from-red-800 to-red-600 text-white p-6 pb-12 shadow-lg">
+        <header class="bg-gradient-to-r from-red-800 to-red-600 text-white p-6 pb-14 shadow-lg">
             <div class="flex justify-between items-start">
                 <div>
                     <h1 class="text-3xl font-extrabold tracking-tight">NATAL 2025</h1>
-                    <p class="text-red-100 text-xs font-medium tracking-wider uppercase opacity-90">Sistem Absensi Terpadu</p>
+                    <p class="text-red-100 text-xs font-medium tracking-wider uppercase opacity-90">GKPS Tangerang</p>
                 </div>
                 <div class="text-right">
                     <div id="liveClock" class="text-xl font-mono font-bold">00:00</div>
@@ -76,22 +63,27 @@
                 </div>
             </div>
             
-            <div class="flex gap-4 mt-6">
-                <div class="bg-black/20 backdrop-blur-md rounded-xl p-3 flex-1 border border-white/10">
-                    <div class="text-3xl font-bold" id="statRegistered">0</div>
-                    <div class="text-[10px] uppercase font-bold text-red-100">Total Jemaat</div>
+            <div class="flex gap-2 mt-6 overflow-x-auto pb-2">
+                <div class="bg-black/20 backdrop-blur-md rounded-xl p-3 min-w-[90px] border border-white/10">
+                    <div class="text-2xl font-bold" id="statRegistered">0</div>
+                    <div class="text-[9px] uppercase font-bold text-red-100">Jemaat</div>
                 </div>
-                <div class="bg-black/20 backdrop-blur-md rounded-xl p-3 flex-1 border border-white/10">
-                    <div class="text-3xl font-bold text-green-300" id="statPresent">0</div>
-                    <div class="text-[10px] uppercase font-bold text-red-100">Hadir Saat Ini</div>
+                <div class="bg-black/20 backdrop-blur-md rounded-xl p-3 min-w-[90px] border border-white/10">
+                    <div class="text-2xl font-bold text-green-300" id="statPresent">0</div>
+                    <div class="text-[9px] uppercase font-bold text-red-100">Hadir</div>
+                </div>
+                <div class="bg-yellow-500/30 backdrop-blur-md rounded-xl p-3 min-w-[90px] border border-white/10">
+                    <div class="text-2xl font-bold text-yellow-300" id="statGifts">0</div>
+                    <div class="text-[9px] uppercase font-bold text-red-100">Hadiah</div>
                 </div>
             </div>
         </header>
 
-        <nav class="flex px-6 -mt-8 relative z-20 gap-3">
-            <button onclick="setTab('register')" id="tab-register" class="flex-1 py-4 rounded-xl shadow-lg text-sm font-bold transition-all transform hover:-translate-y-1 bg-white text-gray-400">📝 Daftar</button>
-            <button onclick="setTab('scan')" id="tab-scan" class="flex-1 py-4 rounded-xl shadow-lg text-sm font-bold transition-all transform hover:-translate-y-1 bg-white text-gray-400">📷 Scanner</button>
-            <button onclick="setTab('data')" id="tab-data" class="flex-1 py-4 rounded-xl shadow-lg text-sm font-bold transition-all transform hover:-translate-y-1 bg-white text-gray-400">📊 Data</button>
+        <nav class="flex px-4 -mt-10 relative z-20 gap-2 overflow-x-auto pb-2 no-scrollbar">
+            <button onclick="setTab('register')" id="tab-register" class="flex-1 py-3 px-4 rounded-xl shadow-lg text-xs font-bold transition-all transform hover:-translate-y-1 bg-white text-gray-400 whitespace-nowrap">📝 Daftar</button>
+            <button onclick="setTab('scan')" id="tab-scan" class="flex-1 py-3 px-4 rounded-xl shadow-lg text-xs font-bold transition-all transform hover:-translate-y-1 bg-white text-gray-400 whitespace-nowrap">📷 Absen</button>
+            <button onclick="setTab('gift')" id="tab-gift" class="flex-1 py-3 px-4 rounded-xl shadow-lg text-xs font-bold transition-all transform hover:-translate-y-1 bg-white text-gray-400 whitespace-nowrap">🎁 Hadiah</button>
+            <button onclick="setTab('data')" id="tab-data" class="flex-1 py-3 px-4 rounded-xl shadow-lg text-xs font-bold transition-all transform hover:-translate-y-1 bg-white text-gray-400 whitespace-nowrap">📊 Data</button>
         </nav>
 
         <main class="flex-1 p-6 overflow-y-auto bg-gray-50 pb-24">
@@ -102,7 +94,6 @@
     <div id="confirmModal" class="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 hidden backdrop-blur-sm transition-opacity opacity-0">
         <div class="bg-white w-full max-w-sm rounded-2xl p-6 shadow-2xl transform scale-95 transition-transform">
             <h3 class="text-lg font-bold text-gray-800 mb-4 border-b pb-2">Konfirmasi Data</h3>
-            
             <div class="space-y-3 mb-6">
                 <div><div class="text-xs text-gray-400 font-bold uppercase">Nama</div><div id="confName" class="font-bold text-lg text-gray-800"></div></div>
                 <div class="flex gap-4">
@@ -110,7 +101,6 @@
                     <div class="flex-1"><div class="text-xs text-gray-400 font-bold uppercase">Sektor</div><div id="confSector" class="font-bold text-blue-600"></div></div>
                 </div>
             </div>
-
             <div class="flex gap-3">
                 <button onclick="closeModal('confirmModal')" class="flex-1 py-3 rounded-lg font-bold text-gray-600 bg-gray-100 hover:bg-gray-200">Ubah</button>
                 <button onclick="processSave()" class="flex-1 py-3 rounded-lg font-bold text-white bg-green-600 hover:bg-green-700 shadow-lg">Simpan</button>
@@ -121,7 +111,7 @@
     <div id="ticketModal" class="fixed inset-0 z-[70] flex items-center justify-center bg-black/90 hidden backdrop-blur-sm transition-opacity opacity-0">
         <div class="bg-white w-full max-w-sm rounded-2xl p-6 text-center transform scale-95 transition-transform relative">
             <button onclick="closeModal('ticketModal')" class="absolute top-4 right-4 text-2xl text-gray-400 hover:text-red-500">×</button>
-            <div class="text-red-600 font-bold tracking-widest text-xs mb-1 uppercase">Tiket Resmi</div>
+            <div class="text-red-600 font-bold tracking-widest text-xs mb-1 uppercase">Tiket Natal</div>
             <h2 id="ticName" class="text-2xl font-black text-gray-800 leading-tight mb-2">Nama</h2>
             <div class="flex justify-center gap-2 mb-4">
                 <span id="ticClass" class="px-2 py-1 bg-purple-100 text-purple-700 text-xs font-bold rounded">Kelas</span>
@@ -130,7 +120,7 @@
             <div class="bg-white border-4 border-gray-200 p-4 rounded-xl shadow-inner mb-4 inline-block">
                 <img id="ticQR" src="" class="w-48 h-48 object-contain qr-code">
             </div>
-            <p class="text-xs text-gray-400 font-medium">Tunjukkan kode ini ke kamera laptop panitia</p>
+            <p class="text-xs text-gray-400 font-medium">Gunakan QR ini untuk Absensi & Pengambilan Hadiah</p>
             <button onclick="closeModal('ticketModal')" class="mt-4 w-full py-3 bg-gray-100 font-bold text-gray-600 rounded-xl hover:bg-gray-200">Tutup</button>
         </div>
     </div>
@@ -141,7 +131,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, push, onValue, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        // --- CONFIG ---
         const firebaseConfig = {
             apiKey: "AIzaSyBzka8Ps_nf-8zDA2tMDmqEMw6zMoy3aeM",
             authDomain: "eventnatal2025.firebaseapp.com",
@@ -157,17 +146,16 @@
         const db = getDatabase(app);
         const ADMIN_PASS = "ADMIN123";
 
-        // --- STATE ---
         let state = {
             participants: [],
             attendance: [],
+            gifts: [], // Data hadiah
             tab: 'register',
             scanner: null,
             tempData: null,
             searchTerm: ''
         };
 
-        // --- AUDIO ---
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         function beep(type = 'success') {
             if (audioCtx.state === 'suspended') audioCtx.resume();
@@ -180,7 +168,6 @@
             osc.start(); osc.stop(audioCtx.currentTime + 0.15);
         }
 
-        // --- UTILS ---
         const getClock = () => {
             const n = new Date();
             document.getElementById('liveClock').innerText = n.toLocaleTimeString('id-ID', {hour12: false});
@@ -191,21 +178,37 @@
         const fmtDate = () => new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
         const getQR = (txt) => `https://api.qrserver.com/v1/create-qr-code/?size=500x500&margin=20&ecc=L&color=000000&bgcolor=ffffff&data=${encodeURIComponent(txt)}`;
 
-        // --- DB LISTENERS ---
+        // --- LISTENERS ---
         onValue(ref(db, 'participants'), s => {
             state.participants = s.val() ? Object.values(s.val()) : [];
-            updateUI();
+            updateStats();
+            // FIX MASALAH 1: Hanya render ulang jika BUKAN tab register
+            // Jika di tab register, kita hanya update listnya saja secara manual nanti
+            if (state.tab !== 'register') {
+                render();
+            } else {
+                renderParticipantListOnly(); // Fungsi khusus update list tanpa reset form
+            }
         });
+        
         onValue(ref(db, 'attendance'), s => {
             state.attendance = s.val() ? Object.values(s.val()) : [];
-            updateUI();
+            updateStats();
+            if (state.tab === 'data') render(); // Update data view
             document.getElementById('loading').style.display = 'none';
         });
 
-        function updateUI() {
+        // Listener Hadiah Baru
+        onValue(ref(db, 'gifts'), s => {
+            state.gifts = s.val() ? Object.values(s.val()) : [];
+            updateStats();
+            if (state.tab === 'data' || state.tab === 'gift') render();
+        });
+
+        function updateStats() {
             document.getElementById('statRegistered').innerText = state.participants.length;
             document.getElementById('statPresent').innerText = state.attendance.length;
-            if(state.tab !== 'scan') render(); 
+            document.getElementById('statGifts').innerText = state.gifts.length;
         }
 
         // --- CORE LOGIC ---
@@ -213,14 +216,11 @@
             const name = document.getElementById('inName').value.trim();
             const cls = document.getElementById('inClass').value;
             const sec = document.getElementById('inSector').value;
-
             if(!name || !cls || !sec) return alert("Mohon lengkapi semua data!");
-
             state.tempData = { name, cls, sec };
             document.getElementById('confName').innerText = name;
             document.getElementById('confClass').innerText = cls;
             document.getElementById('confSector').innerText = sec;
-            
             const m = document.getElementById('confirmModal');
             m.classList.remove('hidden');
             setTimeout(() => { m.classList.remove('opacity-0'); m.children[0].classList.replace('scale-95','scale-100'); }, 10);
@@ -231,44 +231,68 @@
             const { name, cls, sec } = state.tempData;
             const id = Date.now().toString();
             const qr = `NATAL-${id.slice(-6)}`;
-
             push(ref(db, 'participants'), {
                 id, name, classGrade: cls, sector: sec, qrCode: qr,
                 registeredAt: fmtDate(), timestamp: Date.now()
             });
-
             window.closeModal('confirmModal');
+            // Form reset is handled here, NOT by re-render
             document.getElementById('inName').value = '';
             
             document.getElementById('ticName').innerText = name;
             document.getElementById('ticClass').innerText = cls;
             document.getElementById('ticSector').innerText = sec;
             document.getElementById('ticQR').src = getQR(qr);
-            
             const t = document.getElementById('ticketModal');
             t.classList.remove('hidden');
             setTimeout(() => { t.classList.remove('opacity-0'); t.children[0].classList.replace('scale-95','scale-100'); }, 10);
         };
 
-        window.doCheckIn = (pid) => {
+        // --- LOGIKA SCAN (ABSEN & HADIAH) ---
+        window.processScannedID = (pid) => {
             const p = state.participants.find(x => x.id === pid);
             if(!p) return;
-            
-            const exists = state.attendance.find(x => x.participantId === pid);
+
+            // CABANG LOGIKA: Apakah Absen atau Ambil Hadiah?
+            if (state.tab === 'gift') {
+                window.claimGift(p);
+            } else {
+                window.doCheckIn(p);
+            }
+        };
+
+        window.doCheckIn = (p) => {
+            const exists = state.attendance.find(x => x.participantId === p.id);
             if(exists) {
                 beep('fail');
-                showScanResult(false, `⚠️ ${p.name} Sudah Masuk!`);
+                showScanResult(false, `⚠️ ${p.name} Sudah Absen!`);
             } else {
                 beep('success');
                 push(ref(db, 'attendance'), {
-                    id: Date.now().toString(), participantId: pid, name: p.name,
+                    id: Date.now().toString(), participantId: p.id, name: p.name,
                     classGrade: p.classGrade, sector: p.sector, timestamp: fmtDate()
                 });
                 showScanResult(true, `✅ ${p.name} Hadir!`);
             }
         };
 
-        // --- SCANNER SYSTEM (Standard) ---
+        // Modul Hadiah
+        window.claimGift = (p) => {
+            const alreadyClaimed = state.gifts.find(x => x.participantId === p.id);
+            if(alreadyClaimed) {
+                beep('fail');
+                showScanResult(false, `⚠️ ${p.name} Sudah Ambil Hadiah!`, 'bg-yellow-500');
+            } else {
+                beep('success');
+                push(ref(db, 'gifts'), {
+                    id: Date.now().toString(), participantId: p.id, name: p.name,
+                    classGrade: p.classGrade, sector: p.sector, timestamp: fmtDate()
+                });
+                showScanResult(true, `🎁 ${p.name} Dapat Hadiah!`, 'bg-purple-600');
+            }
+        };
+
+        // --- SCANNER SYSTEM ---
         window.initScanner = () => {
             if(state.scanner) return;
             const config = { fps: 10, qrbox: 450, aspectRatio: 1.0, disableFlip: false };
@@ -277,7 +301,8 @@
             state.scanner.render((decodedText) => {
                 if(state.scanner) state.scanner.pause();
                 const p = state.participants.find(x => x.qrCode === decodedText);
-                if(p) window.doCheckIn(p.id);
+                
+                if(p) window.processScannedID(p.id); // Panggil fungsi proses sentral
                 else { beep('fail'); showScanResult(false, "❌ QR Tidak Dikenal"); }
                 
                 setTimeout(() => { if(state.scanner) state.scanner.resume(); }, 2500);
@@ -291,90 +316,132 @@
             }
         };
 
-        function showScanResult(success, msg) {
+        function showScanResult(success, msg, customColor) {
             const el = document.getElementById('scanRes');
             if(el) {
                 el.innerHTML = msg;
-                el.className = `p-4 rounded-xl font-bold text-center text-white shadow-lg animate-pulse mb-4 ${success ? 'bg-green-500' : 'bg-red-500'}`;
+                const color = customColor ? customColor : (success ? 'bg-green-500' : 'bg-red-500');
+                el.className = `p-4 rounded-xl font-bold text-center text-white shadow-lg animate-pulse mb-4 ${color}`;
                 el.classList.remove('hidden');
                 setTimeout(() => { el.classList.add('hidden'); }, 2000);
             }
         }
 
-        // --- SEARCH MANUAL FIX ---
+        // --- HELPERS ---
         window.handleSearch = (el) => {
             state.searchTerm = el.value.toLowerCase();
             const container = document.getElementById('manual-list');
             if(!container) return;
-            
             const filtered = state.participants.filter(p => p.name.toLowerCase().includes(state.searchTerm));
             
             if(filtered.length === 0) {
                 container.innerHTML = '<div class="text-center text-gray-400 py-4 text-sm">Nama tidak ditemukan</div>';
                 return;
             }
-            
-            container.innerHTML = filtered.map(p => {
-                const isPresent = state.attendance.find(r => r.participantId === p.id);
+            container.innerHTML = generateListHTML(filtered, state.tab === 'gift'); // Pass mode hadiah
+        };
+
+        // Helper untuk generate list manual checkin/hadiah
+        function generateListHTML(list, isGiftMode) {
+            return list.map(p => {
+                let statusBadge = '';
+                let actionBtn = '';
+
+                if (isGiftMode) {
+                    const claimed = state.gifts.find(g => g.participantId === p.id);
+                    if (claimed) statusBadge = `<span class="text-purple-600 font-bold text-xs bg-purple-100 px-3 py-1 rounded-lg">🎁 DIAMBIL</span>`;
+                    else actionBtn = `<button onclick="window.processScannedID('${p.id}')" class="bg-purple-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-purple-700">AMBIL</button>`;
+                } else {
+                    const present = state.attendance.find(a => a.participantId === p.id);
+                    if (present) statusBadge = `<span class="text-green-600 font-bold text-xs bg-green-50 px-3 py-1 rounded-lg">HADIR</span>`;
+                    else actionBtn = `<button onclick="window.processScannedID('${p.id}')" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-blue-700">CHECK-IN</button>`;
+                }
+
                 return `
                 <div class="flex items-center justify-between p-3 border-b border-gray-100 hover:bg-gray-50">
                     <div>
                         <div class="font-bold text-gray-800 text-sm">${p.name}</div>
                         <div class="flex gap-2 mt-1">
-                            <span class="text-[10px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded font-bold">${p.classGrade || '-'}</span>
-                            <span class="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded font-bold">${p.sector || '-'}</span>
+                            <span class="text-[10px] bg-gray-100 text-gray-700 px-2 py-0.5 rounded font-bold">${p.classGrade}</span>
+                            <span class="text-[10px] bg-gray-100 text-gray-700 px-2 py-0.5 rounded font-bold">${p.sector}</span>
                         </div>
                     </div>
-                    ${isPresent 
-                        ? `<span class="text-green-600 font-bold text-xs bg-green-50 px-3 py-1 rounded-lg border border-green-200">HADIR</span>`
-                        : `<button onclick="window.doCheckIn('${p.id}')" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-blue-700 shadow-sm transition-colors">CHECK-IN</button>`
-                    }
+                    ${statusBadge || actionBtn}
                 </div>`;
             }).join('');
+        }
+
+        // Fungsi khusus update list TANPA reset form (Fix Masalah 1)
+        function renderParticipantListOnly() {
+            const listContainer = document.getElementById('participant-list-container');
+            if (listContainer) {
+                listContainer.innerHTML = state.participants.slice().reverse().map(p => {
+                    const active = state.attendance.find(a => a.participantId === p.id);
+                    return `
+                    <div class="bg-white p-4 rounded-xl shadow-sm flex justify-between items-center border-l-4 ${active ? 'border-green-500 bg-green-50' : 'border-gray-200'}">
+                        <div>
+                            <div class="font-bold text-gray-800">${p.name}</div>
+                            <div class="flex gap-2 mt-1">
+                                <span class="text-[10px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded font-bold">${p.classGrade}</span>
+                                <span class="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded font-bold">${p.sector}</span>
+                            </div>
+                        </div>
+                        <button onclick="window.showTicket('${p.name}', '${p.classGrade}', '${p.sector}', '${p.qrCode}')" class="text-xs font-bold bg-gray-100 px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-200">TIKET</button>
+                    </div>`;
+                }).join('');
+            }
+        }
+
+        window.showTicket = (n, c, s, q) => {
+            document.getElementById('ticName').innerText = n;
+            document.getElementById('ticClass').innerText = c;
+            document.getElementById('ticSector').innerText = s;
+            document.getElementById('ticQR').src = getQR(q);
+            const t = document.getElementById('ticketModal');
+            t.classList.remove('hidden');
+            setTimeout(() => t.children[0].classList.replace('scale-95','scale-100'), 10);
         };
 
-        // --- IMPORT / EXPORT ---
+        // --- EXPORT/IMPORT/RESET ---
         window.exportData = (type) => {
             let csv = "data:text/csv;charset=utf-8," + (type === 'p' ? "Nama,Kelas,Sektor,QR\n" : "Nama,Kelas,Sektor,Waktu\n");
-            const data = type === 'p' ? state.participants : state.attendance;
-            data.forEach(x => {
-                csv += `"${x.name}","${x.classGrade||''}","${x.sector||''}","${type==='p'?x.qrCode:x.timestamp}"\n`;
-            });
+            const data = type === 'p' ? state.participants : (type === 'g' ? state.gifts : state.attendance);
+            data.forEach(x => csv += `"${x.name}","${x.classGrade}","${x.sector}","${type==='p'?x.qrCode:x.timestamp}"\n`);
             const link = document.createElement("a");
             link.href = encodeURI(csv);
             link.download = `Data_Natal_${type}.csv`;
             link.click();
         };
 
-        window.importData = (input) => {
-            const f = input.files[0];
-            if(!f) return;
-            const r = new FileReader();
-            r.onload = e => {
-                const lines = e.target.result.split('\n');
-                let c = 0;
-                lines.forEach((l,i) => {
-                    if(i===0) return;
-                    const [n, cl, sc] = l.split(',').map(x => x?.replace(/"/g,'').trim());
-                    if(n) {
-                        const id = (Date.now()+i).toString();
-                        push(ref(db, 'participants'), {
-                            id, name: n, classGrade: cl||'Daud', sector: sc||'Sektor 1',
-                            qrCode: `NATAL-${id.slice(-6)}`, registeredAt: fmtDate(), timestamp: Date.now()
-                        });
-                        c++;
-                    }
-                });
-                alert(`Import ${c} data sukses!`);
-                input.value = '';
-            };
-            r.readAsText(f);
+        window.importData = (input) => { /* Sama seperti sebelumnya */
+             const f = input.files[0]; if(!f) return;
+             const r = new FileReader();
+             r.onload = e => {
+                 const lines = e.target.result.split('\n');
+                 let c = 0;
+                 lines.forEach((l,i) => {
+                     if(i===0) return;
+                     const [n, cl, sc] = l.split(',').map(x => x?.replace(/"/g,'').trim());
+                     if(n) {
+                         const id = (Date.now()+i).toString();
+                         push(ref(db, 'participants'), {
+                             id, name: n, classGrade: cl||'Daud', sector: sc||'Sektor 1',
+                             qrCode: `NATAL-${id.slice(-6)}`, registeredAt: fmtDate(), timestamp: Date.now()
+                         });
+                         c++;
+                     }
+                 });
+                 alert(`Import ${c} data sukses!`); input.value = '';
+             };
+             r.readAsText(f);
         };
+        window.triggerImport = () => document.getElementById('importInput').click();
 
         window.resetData = () => {
             if(prompt("Password Admin:") === ADMIN_PASS && confirm("Hapus SEMUA data?")) {
                 set(ref(db, 'participants'), null);
                 set(ref(db, 'attendance'), null);
+                set(ref(db, 'gifts'), null);
                 alert("Database Reset.");
             }
         };
@@ -388,10 +455,10 @@
 
         // --- RENDER SYSTEM ---
         window.setTab = (t) => {
-            if(state.tab === 'scan' && t !== 'scan') window.stopScanner();
+            if((state.tab === 'scan' || state.tab === 'gift') && (t !== 'scan' && t !== 'gift')) window.stopScanner();
             state.tab = t;
             
-            ['register','scan','data'].forEach(x => {
+            ['register','scan','gift','data'].forEach(x => {
                 const btn = document.getElementById(`tab-${x}`);
                 if(x === t) {
                     btn.classList.remove('bg-white','text-gray-400');
@@ -402,61 +469,57 @@
                 }
             });
             render();
-            if(t === 'scan') setTimeout(() => window.initScanner(), 100);
+            // Start scanner for both Scan and Gift tabs
+            if(t === 'scan' || t === 'gift') setTimeout(() => window.initScanner(), 100);
         };
 
         window.render = () => {
             const root = document.getElementById('content-area');
             
             if (state.tab === 'register') {
-                root.innerHTML = `
-                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-6">
-                        <h3 class="font-bold text-gray-700 mb-4">Input Peserta Baru</h3>
-                        <input id="inName" type="text" placeholder="Nama Lengkap..." class="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-xl font-bold focus:border-red-500 outline-none mb-3">
-                        <div class="flex gap-3 mb-4">
-                            <select id="inClass" class="flex-1 p-3 bg-gray-50 border-2 border-gray-100 rounded-xl font-bold text-gray-600 outline-none">
-                                <option value="" disabled selected>Pilih Kelas</option>
-                                <option value="Daud">Daud</option><option value="Daniel">Daniel</option>
-                                <option value="Paulus">Paulus</option><option value="Ester">Ester</option>
-                                <option value="GSM">GSM</option>
-                                <option value="Orang Tua">Orang Tua</option>
-                                <option value="Tamu Undangan">Tamu Undangan</option>
-                            </select>
-                            <select id="inSector" class="flex-1 p-3 bg-gray-50 border-2 border-gray-100 rounded-xl font-bold text-gray-600 outline-none">
-                                <option value="" disabled selected>Sektor</option>
-                                ${[...Array(12)].map((_,i)=>`<option value="Sektor ${i+1}">Sektor ${i+1}</option>`).join('')}
-                            </select>
+                // HANYA RENDER FORM JIKA KOSONG (Initial Render)
+                // Ini mencegah input reset saat update realtime
+                if (!document.getElementById('registration-form')) {
+                    root.innerHTML = `
+                        <div id="registration-form" class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-6">
+                            <h3 class="font-bold text-gray-700 mb-4">Input Peserta Baru</h3>
+                            <input id="inName" type="text" placeholder="Nama Lengkap..." class="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-xl font-bold focus:border-red-500 outline-none mb-3">
+                            <div class="flex gap-3 mb-4">
+                                <select id="inClass" class="flex-1 p-3 bg-gray-50 border-2 border-gray-100 rounded-xl font-bold text-gray-600 outline-none">
+                                    <option value="" disabled selected>Pilih Kelas</option>
+                                    <option value="Daud">Daud</option><option value="Daniel">Daniel</option>
+                                    <option value="Paulus">Paulus</option><option value="Ester">Ester</option>
+                                    <option value="GSM">GSM</option><option value="Orang Tua">Orang Tua</option><option value="Tamu Undangan">Tamu Undangan</option>
+                                </select>
+                                <select id="inSector" class="flex-1 p-3 bg-gray-50 border-2 border-gray-100 rounded-xl font-bold text-gray-600 outline-none">
+                                    <option value="" disabled selected>Sektor</option>
+                                    ${[...Array(12)].map((_,i)=>`<option value="Sektor ${i+1}">Sektor ${i+1}</option>`).join('')}
+                                </select>
+                            </div>
+                            <button onclick="preRegister()" class="w-full py-4 bg-red-600 text-white font-extrabold rounded-xl shadow-lg hover:bg-red-700 active:scale-95 transition-transform">LANJUT KONFIRMASI</button>
                         </div>
-                        <button onclick="preRegister()" class="w-full py-4 bg-red-600 text-white font-extrabold rounded-xl shadow-lg hover:bg-red-700 active:scale-95 transition-transform">LANJUT KONFIRMASI</button>
-                    </div>
-                    <div class="space-y-3">
-                        ${state.participants.slice().reverse().map(p => {
-                            const active = state.attendance.find(a => a.participantId === p.id);
-                            return `
-                            <div class="bg-white p-4 rounded-xl shadow-sm flex justify-between items-center border-l-4 ${active ? 'border-green-500 bg-green-50' : 'border-gray-200'}">
-                                <div>
-                                    <div class="font-bold text-gray-800">${p.name}</div>
-                                    <div class="flex gap-2 mt-1">
-                                        <span class="text-[10px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded font-bold">${p.classGrade}</span>
-                                        <span class="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded font-bold">${p.sector}</span>
-                                    </div>
-                                </div>
-                                <button onclick="document.getElementById('ticName').innerText='${p.name}';document.getElementById('ticClass').innerText='${p.classGrade}';document.getElementById('ticSector').innerText='${p.sector}';document.getElementById('ticQR').src=getQR('${p.qrCode}');document.getElementById('ticketModal').classList.remove('hidden');setTimeout(()=>document.getElementById('ticketModal').classList.remove('opacity-0'),10);" class="text-xs font-bold bg-gray-100 px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-200">TIKET</button>
-                            </div>`;
-                        }).join('')}
-                    </div>
-                `;
-            } else if (state.tab === 'scan') {
+                        <div id="participant-list-container" class="space-y-3"></div>
+                    `;
+                }
+                renderParticipantListOnly(); // Render list peserta
+            } else if (state.tab === 'scan' || state.tab === 'gift') {
+                const isGift = state.tab === 'gift';
+                const color = isGift ? 'bg-purple-600' : 'bg-green-600';
+                const label = isGift ? 'Scanner Hadiah' : 'Scanner Absensi';
+                const hint = isGift ? 'Scan QR untuk ambil hadiah' : 'Scan QR untuk kehadiran';
+
                 root.innerHTML = `
                     <div class="bg-white p-4 rounded-2xl shadow-sm text-center mb-6">
-                        <h3 class="font-bold text-gray-700 mb-2">Scanner Laptop</h3>
-                        <p class="text-xs text-gray-400 mb-4">Pastikan browser mengizinkan akses kamera</p>
+                        <div class="flex items-center justify-center gap-2 mb-2">
+                            <span class="text-2xl">${isGift ? '🎁' : '📷'}</span>
+                            <h3 class="font-bold text-gray-700">${label}</h3>
+                        </div>
                         <div id="scanRes" class="hidden"></div>
                         <div id="reader" class="mb-4"></div>
-                        <p class="text-[10px] text-gray-400">Arahkan QR Code Tiket ke Kamera</p>
+                        <p class="text-[10px] text-gray-400">${hint}</p>
                     </div>
                     <div class="bg-white p-4 rounded-2xl shadow-sm">
-                        <div class="text-sm font-bold text-gray-400 mb-2 uppercase">Manual Check-In</div>
+                        <div class="text-sm font-bold text-gray-400 mb-2 uppercase">Manual ${isGift ? 'Ambil Hadiah' : 'Check-In'}</div>
                         <input oninput="window.handleSearch(this)" type="text" placeholder="Cari nama..." class="w-full p-3 bg-gray-50 border rounded-xl mb-2 text-sm focus:outline-none focus:border-blue-500 transition-colors">
                         <div id="manual-list" class="max-h-48 overflow-y-auto"></div>
                     </div>
@@ -464,12 +527,14 @@
             } else if (state.tab === 'data') {
                 root.innerHTML = `
                     <div class="bg-white p-4 rounded-2xl shadow-sm mb-4">
-                        <div class="grid grid-cols-2 gap-2 mb-2">
-                            <button onclick="exportData('p')" class="py-3 bg-green-50 text-green-700 rounded-xl text-xs font-bold border border-green-200">Export Jemaat</button>
-                            <button onclick="exportData('a')" class="py-3 bg-blue-50 text-blue-700 rounded-xl text-xs font-bold border border-blue-200">Export Absensi</button>
+                        <div class="grid grid-cols-3 gap-2 mb-2">
+                            <button onclick="exportData('p')" class="py-2 bg-green-50 text-green-700 rounded-lg text-[10px] font-bold border border-green-200">Exp. Jemaat</button>
+                            <button onclick="exportData('a')" class="py-2 bg-blue-50 text-blue-700 rounded-lg text-[10px] font-bold border border-blue-200">Exp. Absensi</button>
+                            <button onclick="exportData('g')" class="py-2 bg-purple-50 text-purple-700 rounded-lg text-[10px] font-bold border border-purple-200">Exp. Hadiah</button>
                         </div>
-                        <button onclick="document.getElementById('importInput').click()" class="w-full py-3 bg-gray-50 text-gray-600 rounded-xl text-xs font-bold border border-gray-200">Import CSV (Nama,Kelas,Sektor)</button>
+                        <button onclick="triggerImport()" class="w-full py-3 bg-gray-50 text-gray-600 rounded-xl text-xs font-bold border border-gray-200">Import CSV (Nama,Kelas,Sektor)</button>
                     </div>
+                    <h3 class="font-bold text-gray-600 text-sm mb-2 px-1">Riwayat Kehadiran</h3>
                     <div class="space-y-2">
                         ${state.attendance.slice().reverse().map(a => `
                             <div class="bg-white p-3 rounded-xl shadow-sm flex items-center justify-between border border-gray-100">
