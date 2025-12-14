@@ -12,7 +12,6 @@
     <style>
         body { font-family: 'Inter', sans-serif; }
         
-        /* CSS Scanner */
         #reader { 
             width: 100%; 
             background: #000; 
@@ -67,7 +66,7 @@
                 </div>
             </div>
             
-            <div class="flex gap-2 mt-6 overflow-x-auto pb-2">
+            <div class="flex gap-2 mt-6 overflow-x-auto pb-2 no-scrollbar">
                 <div class="bg-black/20 backdrop-blur-md rounded-xl p-3 min-w-[90px] border border-white/10">
                     <div class="text-2xl font-bold" id="statRegistered">0</div>
                     <div class="text-[9px] uppercase font-bold text-red-100">Jemaat</div>
@@ -78,7 +77,7 @@
                 </div>
                 <div class="bg-yellow-500/30 backdrop-blur-md rounded-xl p-3 min-w-[90px] border border-white/10">
                     <div class="text-2xl font-bold text-yellow-300" id="statGifts">0</div>
-                    <div class="text-[9px] uppercase font-bold text-red-100">Hadiah Keluar</div>
+                    <div class="text-[9px] uppercase font-bold text-red-100">Hadiah</div>
                 </div>
             </div>
         </header>
@@ -246,16 +245,23 @@
             setTimeout(() => { t.classList.remove('opacity-0'); t.children[0].classList.replace('scale-95','scale-100'); }, 10);
         };
 
+        // --- FITUR CARI TIKET ---
         window.findMyTicket = () => {
             const nameInput = document.getElementById('findName');
             const sectorInput = document.getElementById('findSector');
             const name = nameInput.value.trim().toLowerCase();
             const sector = sectorInput.value;
+
             if(!name || !sector) {
                 alert("Mohon isi Nama Lengkap dan Sektor sesuai pendaftaran!");
                 return;
             }
-            const found = state.participants.find(p => p.name.trim().toLowerCase() === name && p.sector === sector);
+
+            const found = state.participants.find(p => 
+                p.name.trim().toLowerCase() === name && 
+                p.sector === sector
+            );
+
             if (found) {
                 window.showTicket(found.name, found.classGrade, found.sector, found.qrCode);
                 document.getElementById('findName').value = ''; 
@@ -503,23 +509,28 @@
                     <div class="bg-white p-4 rounded-2xl shadow-sm mb-6">
                         <div class="flex gap-2 mb-4 p-1 bg-gray-100 rounded-xl">
                             <button onclick="switchDataView('attendance')" class="flex-1 py-3 text-xs font-bold rounded-lg transition-all ${btnAttendanceClass}">
-                                📋 Laporan Kehadiran
+                                📋 Data Kehadiran
                             </button>
                             <button onclick="switchDataView('gifts')" class="flex-1 py-3 text-xs font-bold rounded-lg transition-all ${btnGiftClass}">
-                                🎁 Laporan Hadiah
+                                🎁 Data Hadiah
                             </button>
                         </div>
 
-                        <div class="grid grid-cols-2 gap-2 mb-4">
-                            <button onclick="exportData(state.dataViewMode === 'gifts' ? 'g' : 'a')" class="py-2 ${isGiftView ? 'bg-purple-50 text-purple-700 border-purple-200' : 'bg-blue-50 text-blue-700 border-blue-200'} rounded-lg text-[10px] font-bold border flex justify-center items-center gap-1">
-                                📥 Download Laporan Ini
+                        <div class="grid grid-cols-1 gap-2 mb-4">
+                            <button onclick="exportData('p')" class="w-full py-3 bg-green-50 text-green-700 border border-green-200 rounded-lg text-[10px] font-bold hover:bg-green-100 text-center">
+                                📥 Download Data Seluruh Jemaat (Master)
                             </button>
-                            <button onclick="exportData('p')" class="py-2 bg-green-50 text-green-700 rounded-lg text-[10px] font-bold border border-green-200">
-                                📥 Download Data Jemaat
-                            </button>
+                            <div class="grid grid-cols-2 gap-2">
+                                <button onclick="exportData('a')" class="py-3 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg text-[10px] font-bold hover:bg-blue-100 text-center">
+                                    📥 Download Absensi
+                                </button>
+                                <button onclick="exportData('g')" class="py-3 bg-purple-50 text-purple-700 border border-purple-200 rounded-lg text-[10px] font-bold hover:bg-purple-100 text-center">
+                                    📥 Download Hadiah
+                                </button>
+                            </div>
                         </div>
                         
-                        <button onclick="triggerImport()" class="w-full py-3 bg-gray-50 text-gray-600 rounded-xl text-xs font-bold border border-gray-200 border-dashed">
+                        <button onclick="triggerImport()" class="w-full py-3 bg-gray-50 text-gray-600 rounded-xl text-xs font-bold border border-gray-200 border-dashed hover:bg-gray-50">
                             📂 Import Data Peserta (CSV)
                         </button>
                     </div>
@@ -573,13 +584,41 @@
             setTimeout(() => t.children[0].classList.replace('scale-95','scale-100'), 10);
         };
 
+        // --- FIXED EXPORT FUNCTION ---
         window.exportData = (type) => {
-            let csv = "data:text/csv;charset=utf-8," + (type === 'p' ? "Nama,Kelas,Sektor,QR\n" : "Nama,Kelas,Sektor,Waktu\n");
-            const data = type === 'p' ? state.participants : (type === 'g' ? state.gifts : state.attendance);
-            data.forEach(x => csv += `"${x.name}","${x.classGrade}","${x.sector}","${type==='p'?x.qrCode:x.timestamp}"\n`);
+            let csv = "data:text/csv;charset=utf-8,";
+            let filename = "";
+            let data = [];
+
+            if (type === 'p') {
+                // Export Jemaat (Master)
+                csv += "Nama,Kelas,Sektor,QR_Code,Waktu_Daftar\n";
+                data = state.participants;
+                filename = "Data_Jemaat_Natal_2025.csv";
+                data.forEach(x => {
+                    csv += `"${x.name}","${x.classGrade}","${x.sector}","${x.qrCode}","${x.registeredAt}"\n`;
+                });
+            } else if (type === 'a') {
+                // Export Absensi (Kehadiran)
+                csv += "Nama,Kelas,Sektor,Waktu_Hadir\n";
+                data = state.attendance;
+                filename = "Laporan_Absensi_Natal_2025.csv";
+                data.forEach(x => {
+                    csv += `"${x.name}","${x.classGrade}","${x.sector}","${x.timestamp}"\n`;
+                });
+            } else if (type === 'g') {
+                // Export Hadiah
+                csv += "Nama,Kelas,Sektor,Waktu_Ambil_Hadiah\n";
+                data = state.gifts;
+                filename = "Laporan_Hadiah_Natal_2025.csv";
+                data.forEach(x => {
+                    csv += `"${x.name}","${x.classGrade}","${x.sector}","${x.timestamp}"\n`;
+                });
+            }
+
             const link = document.createElement("a");
             link.href = encodeURI(csv);
-            link.download = `Data_Natal_${type}.csv`;
+            link.download = filename;
             link.click();
         };
 
@@ -625,6 +664,4 @@
 
         // Init
         setTab('register');
-    </script>
-</body>
-</html>
+    </script></body></html>
