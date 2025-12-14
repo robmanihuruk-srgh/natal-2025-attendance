@@ -67,7 +67,7 @@
                 </div>
             </div>
             
-            <div class="flex gap-2 mt-6 overflow-x-auto pb-2 no-scrollbar">
+            <div class="flex gap-2 mt-6 overflow-x-auto pb-2">
                 <div class="bg-black/20 backdrop-blur-md rounded-xl p-3 min-w-[90px] border border-white/10">
                     <div class="text-2xl font-bold" id="statRegistered">0</div>
                     <div class="text-[9px] uppercase font-bold text-red-100">Jemaat</div>
@@ -78,7 +78,7 @@
                 </div>
                 <div class="bg-yellow-500/30 backdrop-blur-md rounded-xl p-3 min-w-[90px] border border-white/10">
                     <div class="text-2xl font-bold text-yellow-300" id="statGifts">0</div>
-                    <div class="text-[9px] uppercase font-bold text-red-100">Hadiah</div>
+                    <div class="text-[9px] uppercase font-bold text-red-100">Hadiah Keluar</div>
                 </div>
             </div>
         </header>
@@ -136,7 +136,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, push, onValue, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        // --- CONFIG FIREBASE ---
         const firebaseConfig = {
             apiKey: "AIzaSyBzka8Ps_nf-8zDA2tMDmqEMw6zMoy3aeM",
             authDomain: "eventnatal2025.firebaseapp.com",
@@ -189,7 +188,6 @@
         onValue(ref(db, 'participants'), s => {
             state.participants = s.val() ? Object.values(s.val()) : [];
             updateStats();
-            // Hanya update list jika di tab register untuk mencegah form reset
             if (state.tab === 'register') renderParticipantListOnly();
         });
         
@@ -248,24 +246,16 @@
             setTimeout(() => { t.classList.remove('opacity-0'); t.children[0].classList.replace('scale-95','scale-100'); }, 10);
         };
 
-        // --- FITUR CARI TIKET (FIXED) ---
         window.findMyTicket = () => {
             const nameInput = document.getElementById('findName');
             const sectorInput = document.getElementById('findSector');
-            
             const name = nameInput.value.trim().toLowerCase();
             const sector = sectorInput.value;
-
             if(!name || !sector) {
                 alert("Mohon isi Nama Lengkap dan Sektor sesuai pendaftaran!");
                 return;
             }
-
-            const found = state.participants.find(p => 
-                p.name.trim().toLowerCase() === name && 
-                p.sector === sector
-            );
-
+            const found = state.participants.find(p => p.name.trim().toLowerCase() === name && p.sector === sector);
             if (found) {
                 window.showTicket(found.name, found.classGrade, found.sector, found.qrCode);
                 document.getElementById('findName').value = ''; 
@@ -461,10 +451,10 @@
                         <h3 class="font-bold text-gray-700 mb-2">Cari Tiket Saya</h3>
                         <p class="text-xs text-gray-400 mb-6">Masukkan nama persis sesuai pendaftaran</p>
                         
-                        <input id="findName" type="text" placeholder="Nama Lengkap Anda..." class="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-xl font-bold focus:border-red-500 outline-none mb-3">
+                        <input id="findName" type="text" placeholder="Nama Lengkap Anda..." class="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-xl font-bold focus:border-blue-500 outline-none mb-3">
                         
                         <div class="relative mb-6">
-                            <select id="findSector" class="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-xl font-bold text-gray-600 focus:outline-none focus:border-red-500 appearance-none">
+                            <select id="findSector" class="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-xl font-bold text-gray-600 focus:outline-none focus:border-blue-500 appearance-none">
                                 <option value="" disabled selected>Pilih Sektor Anda</option>
                                 ${[...Array(12)].map((_,i)=>`<option value="Sektor ${i+1}">Sektor ${i+1}</option>`).join('')}
                             </select>
