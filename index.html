@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Absensi Event Natal 2025 - GKPS Tangerang</title>
+    <title>Absensi Event Natal 2025</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     
@@ -12,7 +12,7 @@
     <style>
         body { font-family: 'Inter', sans-serif; }
         
-        /* CSS Scanner */
+        /* CSS Scanner Khusus Laptop */
         #reader { 
             width: 100%; 
             background: #000; 
@@ -35,6 +35,10 @@
         @keyframes pulse-soft { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
         .animate-pulse-soft { animation: pulse-soft 2s infinite; }
         img.qr-code { image-rendering: pixelated; }
+        
+        /* Hide Scrollbar */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
 <body class="min-h-screen bg-gray-50 text-gray-800 font-sans">
@@ -48,14 +52,14 @@
         
         <div id="loading" class="absolute inset-0 z-50 bg-white flex flex-col justify-center items-center">
             <div class="text-5xl mb-4 animate-bounce">❄️</div>
-            <div class="font-bold text-gray-500">Memuat Sistem GKPS...</div>
+            <div class="font-bold text-gray-500">Memuat Sistem...</div>
         </div>
 
-        <header class="bg-gradient-to-r from-red-800 to-red-600 text-white p-6 pb-14 shadow-lg">
+        <header class="bg-gradient-to-r from-red-800 to-red-600 text-white p-6 pb-12 shadow-lg">
             <div class="flex justify-between items-start">
                 <div>
                     <h1 class="text-3xl font-extrabold tracking-tight">NATAL 2025</h1>
-                    <p class="text-red-100 text-xs font-medium tracking-wider uppercase opacity-90">GKPS Tangerang</p>
+                    <p class="text-red-100 text-xs font-medium tracking-wider uppercase opacity-90">Sistem Absensi Terpadu</p>
                 </div>
                 <div class="text-right">
                     <div id="liveClock" class="text-xl font-mono font-bold">00:00</div>
@@ -63,27 +67,27 @@
                 </div>
             </div>
             
-            <div class="flex gap-2 mt-6 overflow-x-auto pb-2">
-                <div class="bg-black/20 backdrop-blur-md rounded-xl p-3 min-w-[90px] border border-white/10">
+            <div class="flex gap-2 mt-6 overflow-x-auto pb-2 no-scrollbar">
+                <div class="bg-black/20 backdrop-blur-md rounded-xl p-3 min-w-[100px] border border-white/10">
                     <div class="text-2xl font-bold" id="statRegistered">0</div>
-                    <div class="text-[9px] uppercase font-bold text-red-100">Jemaat</div>
+                    <div class="text-[10px] uppercase font-bold text-red-100">Total Jemaat</div>
                 </div>
-                <div class="bg-black/20 backdrop-blur-md rounded-xl p-3 min-w-[90px] border border-white/10">
+                <div class="bg-black/20 backdrop-blur-md rounded-xl p-3 min-w-[100px] border border-white/10">
                     <div class="text-2xl font-bold text-green-300" id="statPresent">0</div>
-                    <div class="text-[9px] uppercase font-bold text-red-100">Hadir</div>
+                    <div class="text-[10px] uppercase font-bold text-red-100">Hadir</div>
                 </div>
-                <div class="bg-yellow-500/30 backdrop-blur-md rounded-xl p-3 min-w-[90px] border border-white/10">
+                <div class="bg-yellow-500/30 backdrop-blur-md rounded-xl p-3 min-w-[100px] border border-white/10">
                     <div class="text-2xl font-bold text-yellow-300" id="statGifts">0</div>
-                    <div class="text-[9px] uppercase font-bold text-red-100">Hadiah</div>
+                    <div class="text-[10px] uppercase font-bold text-red-100">Ambil Hadiah</div>
                 </div>
             </div>
         </header>
 
-        <nav class="flex px-4 -mt-10 relative z-20 gap-2 overflow-x-auto pb-2 no-scrollbar">
+        <nav class="flex px-4 -mt-8 relative z-20 gap-2 overflow-x-auto pb-2 no-scrollbar">
             <button onclick="setTab('register')" id="tab-register" class="flex-1 py-3 px-4 rounded-xl shadow-lg text-xs font-bold transition-all transform hover:-translate-y-1 bg-white text-gray-400 whitespace-nowrap">📝 Daftar</button>
             <button onclick="setTab('scan')" id="tab-scan" class="flex-1 py-3 px-4 rounded-xl shadow-lg text-xs font-bold transition-all transform hover:-translate-y-1 bg-white text-gray-400 whitespace-nowrap">📷 Absen</button>
             <button onclick="setTab('gift')" id="tab-gift" class="flex-1 py-3 px-4 rounded-xl shadow-lg text-xs font-bold transition-all transform hover:-translate-y-1 bg-white text-gray-400 whitespace-nowrap">🎁 Hadiah</button>
-            <button onclick="setTab('data')" id="tab-data" class="flex-1 py-3 px-4 rounded-xl shadow-lg text-xs font-bold transition-all transform hover:-translate-y-1 bg-white text-gray-400 whitespace-nowrap">📊 Data</button>
+            <button onclick="setTab('data')" id="tab-data" class="flex-1 py-3 px-4 rounded-xl shadow-lg text-xs font-bold transition-all transform hover:-translate-y-1 bg-white text-gray-400 whitespace-nowrap">📊 Laporan</button>
         </nav>
 
         <main class="flex-1 p-6 overflow-y-auto bg-gray-50 pb-24">
@@ -131,6 +135,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, push, onValue, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
+        // --- CONFIG FIREBASE ---
         const firebaseConfig = {
             apiKey: "AIzaSyBzka8Ps_nf-8zDA2tMDmqEMw6zMoy3aeM",
             authDomain: "eventnatal2025.firebaseapp.com",
@@ -146,16 +151,19 @@
         const db = getDatabase(app);
         const ADMIN_PASS = "ADMIN123";
 
+        // --- STATE ---
         let state = {
             participants: [],
             attendance: [],
-            gifts: [], // Data hadiah
+            gifts: [],
             tab: 'register',
+            dataViewMode: 'attendance', // 'attendance' or 'gifts'
             scanner: null,
             tempData: null,
             searchTerm: ''
         };
 
+        // --- AUDIO ---
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         function beep(type = 'success') {
             if (audioCtx.state === 'suspended') audioCtx.resume();
@@ -168,6 +176,7 @@
             osc.start(); osc.stop(audioCtx.currentTime + 0.15);
         }
 
+        // --- UTILS ---
         const getClock = () => {
             const n = new Date();
             document.getElementById('liveClock').innerText = n.toLocaleTimeString('id-ID', {hour12: false});
@@ -182,27 +191,20 @@
         onValue(ref(db, 'participants'), s => {
             state.participants = s.val() ? Object.values(s.val()) : [];
             updateStats();
-            // FIX MASALAH 1: Hanya render ulang jika BUKAN tab register
-            // Jika di tab register, kita hanya update listnya saja secara manual nanti
-            if (state.tab !== 'register') {
-                render();
-            } else {
-                renderParticipantListOnly(); // Fungsi khusus update list tanpa reset form
-            }
+            if (state.tab === 'register') renderParticipantListOnly();
         });
         
         onValue(ref(db, 'attendance'), s => {
             state.attendance = s.val() ? Object.values(s.val()) : [];
             updateStats();
-            if (state.tab === 'data') render(); // Update data view
+            if (state.tab === 'data' && state.dataViewMode === 'attendance') render();
             document.getElementById('loading').style.display = 'none';
         });
 
-        // Listener Hadiah Baru
         onValue(ref(db, 'gifts'), s => {
             state.gifts = s.val() ? Object.values(s.val()) : [];
             updateStats();
-            if (state.tab === 'data' || state.tab === 'gift') render();
+            if (state.tab === 'data' && state.dataViewMode === 'gifts') render();
         });
 
         function updateStats() {
@@ -236,7 +238,6 @@
                 registeredAt: fmtDate(), timestamp: Date.now()
             });
             window.closeModal('confirmModal');
-            // Form reset is handled here, NOT by re-render
             document.getElementById('inName').value = '';
             
             document.getElementById('ticName').innerText = name;
@@ -248,17 +249,11 @@
             setTimeout(() => { t.classList.remove('opacity-0'); t.children[0].classList.replace('scale-95','scale-100'); }, 10);
         };
 
-        // --- LOGIKA SCAN (ABSEN & HADIAH) ---
         window.processScannedID = (pid) => {
             const p = state.participants.find(x => x.id === pid);
             if(!p) return;
-
-            // CABANG LOGIKA: Apakah Absen atau Ambil Hadiah?
-            if (state.tab === 'gift') {
-                window.claimGift(p);
-            } else {
-                window.doCheckIn(p);
-            }
+            if (state.tab === 'gift') window.claimGift(p);
+            else window.doCheckIn(p);
         };
 
         window.doCheckIn = (p) => {
@@ -276,7 +271,6 @@
             }
         };
 
-        // Modul Hadiah
         window.claimGift = (p) => {
             const alreadyClaimed = state.gifts.find(x => x.participantId === p.id);
             if(alreadyClaimed) {
@@ -292,7 +286,7 @@
             }
         };
 
-        // --- SCANNER SYSTEM ---
+        // --- SCANNER ---
         window.initScanner = () => {
             if(state.scanner) return;
             const config = { fps: 10, qrbox: 450, aspectRatio: 1.0, disableFlip: false };
@@ -301,10 +295,8 @@
             state.scanner.render((decodedText) => {
                 if(state.scanner) state.scanner.pause();
                 const p = state.participants.find(x => x.qrCode === decodedText);
-                
-                if(p) window.processScannedID(p.id); // Panggil fungsi proses sentral
+                if(p) window.processScannedID(p.id);
                 else { beep('fail'); showScanResult(false, "❌ QR Tidak Dikenal"); }
-                
                 setTimeout(() => { if(state.scanner) state.scanner.resume(); }, 2500);
             }, (error) => {});
         };
@@ -333,20 +325,17 @@
             const container = document.getElementById('manual-list');
             if(!container) return;
             const filtered = state.participants.filter(p => p.name.toLowerCase().includes(state.searchTerm));
-            
             if(filtered.length === 0) {
                 container.innerHTML = '<div class="text-center text-gray-400 py-4 text-sm">Nama tidak ditemukan</div>';
                 return;
             }
-            container.innerHTML = generateListHTML(filtered, state.tab === 'gift'); // Pass mode hadiah
+            container.innerHTML = generateListHTML(filtered, state.tab === 'gift');
         };
 
-        // Helper untuk generate list manual checkin/hadiah
         function generateListHTML(list, isGiftMode) {
             return list.map(p => {
                 let statusBadge = '';
                 let actionBtn = '';
-
                 if (isGiftMode) {
                     const claimed = state.gifts.find(g => g.participantId === p.id);
                     if (claimed) statusBadge = `<span class="text-purple-600 font-bold text-xs bg-purple-100 px-3 py-1 rounded-lg">🎁 DIAMBIL</span>`;
@@ -356,7 +345,6 @@
                     if (present) statusBadge = `<span class="text-green-600 font-bold text-xs bg-green-50 px-3 py-1 rounded-lg">HADIR</span>`;
                     else actionBtn = `<button onclick="window.processScannedID('${p.id}')" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-blue-700">CHECK-IN</button>`;
                 }
-
                 return `
                 <div class="flex items-center justify-between p-3 border-b border-gray-100 hover:bg-gray-50">
                     <div>
@@ -371,11 +359,35 @@
             }).join('');
         }
 
-        // Fungsi khusus update list TANPA reset form (Fix Masalah 1)
+        // --- NEW: DATA VIEW SWITCHER ---
+        window.switchDataView = (mode) => {
+            state.dataViewMode = mode;
+            render(); // Re-render Data tab
+        }
+
+        // --- RENDER SYSTEM ---
+        window.setTab = (t) => {
+            if((state.tab === 'scan' || state.tab === 'gift') && (t !== 'scan' && t !== 'gift')) window.stopScanner();
+            state.tab = t;
+            ['register','scan','gift','data'].forEach(x => {
+                const btn = document.getElementById(`tab-${x}`);
+                if(x === t) {
+                    btn.classList.remove('bg-white','text-gray-400');
+                    btn.classList.add('bg-red-600','text-white','shadow-xl','-translate-y-1');
+                } else {
+                    btn.classList.add('bg-white','text-gray-400');
+                    btn.classList.remove('bg-red-600','text-white','shadow-xl','-translate-y-1');
+                }
+            });
+            render();
+            if(t === 'scan' || t === 'gift') setTimeout(() => window.initScanner(), 100);
+        };
+
+        // UI Functions
         function renderParticipantListOnly() {
-            const listContainer = document.getElementById('participant-list-container');
-            if (listContainer) {
-                listContainer.innerHTML = state.participants.slice().reverse().map(p => {
+            const container = document.getElementById('participant-list-container');
+            if (container) {
+                container.innerHTML = state.participants.slice().reverse().map(p => {
                     const active = state.attendance.find(a => a.participantId === p.id);
                     return `
                     <div class="bg-white p-4 rounded-xl shadow-sm flex justify-between items-center border-l-4 ${active ? 'border-green-500 bg-green-50' : 'border-gray-200'}">
@@ -392,6 +404,98 @@
             }
         }
 
+        window.render = () => {
+            const root = document.getElementById('content-area');
+            
+            if (state.tab === 'register') {
+                if (!document.getElementById('registration-form')) {
+                    root.innerHTML = `
+                        <div id="registration-form" class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-6">
+                            <h3 class="font-bold text-gray-700 mb-4">Input Peserta Baru</h3>
+                            <input id="inName" type="text" placeholder="Nama Lengkap..." class="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-xl font-bold focus:border-red-500 outline-none mb-3">
+                            <div class="flex gap-3 mb-4">
+                                <select id="inClass" class="flex-1 p-3 bg-gray-50 border-2 border-gray-100 rounded-xl font-bold text-gray-600 outline-none">
+                                    <option value="" disabled selected>Pilih Kelas</option>
+                                    <option value="Daud">Daud</option><option value="Daniel">Daniel</option>
+                                    <option value="Paulus">Paulus</option><option value="Ester">Ester</option>
+                                    <option value="GSM">GSM</option><option value="Orang Tua">Orang Tua</option><option value="Tamu Undangan">Tamu Undangan</option>
+                                </select>
+                                <select id="inSector" class="flex-1 p-3 bg-gray-50 border-2 border-gray-100 rounded-xl font-bold text-gray-600 outline-none">
+                                    <option value="" disabled selected>Sektor</option>
+                                    ${[...Array(12)].map((_,i)=>`<option value="Sektor ${i+1}">Sektor ${i+1}</option>`).join('')}
+                                </select>
+                            </div>
+                            <button onclick="preRegister()" class="w-full py-4 bg-red-600 text-white font-extrabold rounded-xl shadow-lg hover:bg-red-700 active:scale-95 transition-transform">LANJUT KONFIRMASI</button>
+                        </div>
+                        <div id="participant-list-container" class="space-y-3"></div>
+                    `;
+                }
+                renderParticipantListOnly();
+            } else if (state.tab === 'scan' || state.tab === 'gift') {
+                const isGift = state.tab === 'gift';
+                const label = isGift ? 'Scanner Hadiah' : 'Scanner Absensi';
+                const hint = isGift ? 'Scan QR untuk ambil hadiah' : 'Scan QR untuk kehadiran';
+                const color = isGift ? 'bg-purple-500' : 'bg-green-500';
+
+                root.innerHTML = `
+                    <div class="bg-white p-4 rounded-2xl shadow-sm text-center mb-6">
+                        <div class="flex items-center justify-center gap-2 mb-2">
+                            <span class="text-2xl">${isGift ? '🎁' : '📷'}</span>
+                            <h3 class="font-bold text-gray-700">${label}</h3>
+                        </div>
+                        <div id="scanRes" class="hidden"></div>
+                        <div id="reader" class="mb-4"></div>
+                        <p class="text-[10px] text-gray-400">${hint}</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-2xl shadow-sm">
+                        <div class="text-sm font-bold text-gray-400 mb-2 uppercase">Manual ${isGift ? 'Ambil Hadiah' : 'Check-In'}</div>
+                        <input oninput="window.handleSearch(this)" type="text" placeholder="Cari nama..." class="w-full p-3 bg-gray-50 border rounded-xl mb-2 text-sm focus:outline-none focus:border-blue-500 transition-colors">
+                        <div id="manual-list" class="max-h-48 overflow-y-auto"></div>
+                    </div>
+                `;
+            } else if (state.tab === 'data') {
+                const isGiftView = state.dataViewMode === 'gifts';
+                const dataToShow = isGiftView ? state.gifts : state.attendance;
+                const headerText = isGiftView ? 'Riwayat Pengambilan Hadiah' : 'Riwayat Kehadiran';
+                const badgeColor = isGiftView ? 'bg-purple-100 text-purple-700' : 'bg-green-100 text-green-700';
+                const badgeText = isGiftView ? 'DIAMBIL' : 'HADIR';
+
+                root.innerHTML = `
+                    <div class="bg-white p-4 rounded-2xl shadow-sm mb-4">
+                        <div class="flex gap-2 mb-4 p-1 bg-gray-100 rounded-lg">
+                            <button onclick="switchDataView('attendance')" class="flex-1 py-2 text-xs font-bold rounded-md transition-all ${!isGiftView ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-400 hover:text-gray-600'}">Data Kehadiran</button>
+                            <button onclick="switchDataView('gifts')" class="flex-1 py-2 text-xs font-bold rounded-md transition-all ${isGiftView ? 'bg-white text-purple-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'}">Data Hadiah</button>
+                        </div>
+
+                        <div class="grid grid-cols-3 gap-2 mb-2">
+                            <button onclick="exportData('p')" class="py-2 bg-green-50 text-green-700 rounded-lg text-[10px] font-bold border border-green-200">Exp. Jemaat</button>
+                            <button onclick="exportData('a')" class="py-2 bg-blue-50 text-blue-700 rounded-lg text-[10px] font-bold border border-blue-200">Exp. Absensi</button>
+                            <button onclick="exportData('g')" class="py-2 bg-purple-50 text-purple-700 rounded-lg text-[10px] font-bold border border-purple-200">Exp. Hadiah</button>
+                        </div>
+                        <button onclick="triggerImport()" class="w-full py-3 bg-gray-50 text-gray-600 rounded-xl text-xs font-bold border border-gray-200">Import CSV (Nama,Kelas,Sektor)</button>
+                    </div>
+
+                    <h3 class="font-bold text-gray-600 text-sm mb-2 px-1">${headerText} (${dataToShow.length})</h3>
+                    <div class="space-y-2">
+                        ${dataToShow.slice().reverse().map(item => `
+                            <div class="bg-white p-3 rounded-xl shadow-sm flex items-center justify-between border border-gray-100">
+                                <div>
+                                    <div class="font-bold text-gray-800">${item.name}</div>
+                                    <div class="flex gap-2 text-[10px] text-gray-500 mt-1">
+                                        <span>${item.classGrade}</span> • <span>${item.sector}</span>
+                                    </div>
+                                    <div class="text-[10px] text-gray-400 mt-1 font-mono">${item.timestamp}</div>
+                                </div>
+                                <span class="${badgeColor} px-2 py-1 rounded text-xs font-bold">${badgeText}</span>
+                            </div>
+                        `).join('')}
+                        ${dataToShow.length === 0 ? '<div class="text-center py-8 text-gray-400 text-sm">Belum ada data</div>' : ''}
+                    </div>
+                    <div class="mt-8 text-center"><button onclick="resetData()" class="text-xs text-red-300 font-bold border border-red-100 px-3 py-1 rounded hover:bg-red-50 hover:text-red-500">Reset System</button></div>
+                `;
+            }
+        };
+
         window.showTicket = (n, c, s, q) => {
             document.getElementById('ticName').innerText = n;
             document.getElementById('ticClass').innerText = c;
@@ -402,7 +506,6 @@
             setTimeout(() => t.children[0].classList.replace('scale-95','scale-100'), 10);
         };
 
-        // --- EXPORT/IMPORT/RESET ---
         window.exportData = (type) => {
             let csv = "data:text/csv;charset=utf-8," + (type === 'p' ? "Nama,Kelas,Sektor,QR\n" : "Nama,Kelas,Sektor,Waktu\n");
             const data = type === 'p' ? state.participants : (type === 'g' ? state.gifts : state.attendance);
@@ -413,7 +516,7 @@
             link.click();
         };
 
-        window.importData = (input) => { /* Sama seperti sebelumnya */
+        window.importData = (input) => { /* ... Import Logic Same as Before ... */ 
              const f = input.files[0]; if(!f) return;
              const r = new FileReader();
              r.onload = e => {
@@ -451,104 +554,6 @@
             m.classList.add('opacity-0');
             m.children[0].classList.replace('scale-100','scale-95');
             setTimeout(() => m.classList.add('hidden'), 300);
-        };
-
-        // --- RENDER SYSTEM ---
-        window.setTab = (t) => {
-            if((state.tab === 'scan' || state.tab === 'gift') && (t !== 'scan' && t !== 'gift')) window.stopScanner();
-            state.tab = t;
-            
-            ['register','scan','gift','data'].forEach(x => {
-                const btn = document.getElementById(`tab-${x}`);
-                if(x === t) {
-                    btn.classList.remove('bg-white','text-gray-400');
-                    btn.classList.add('bg-red-600','text-white','shadow-xl','-translate-y-1');
-                } else {
-                    btn.classList.add('bg-white','text-gray-400');
-                    btn.classList.remove('bg-red-600','text-white','shadow-xl','-translate-y-1');
-                }
-            });
-            render();
-            // Start scanner for both Scan and Gift tabs
-            if(t === 'scan' || t === 'gift') setTimeout(() => window.initScanner(), 100);
-        };
-
-        window.render = () => {
-            const root = document.getElementById('content-area');
-            
-            if (state.tab === 'register') {
-                // HANYA RENDER FORM JIKA KOSONG (Initial Render)
-                // Ini mencegah input reset saat update realtime
-                if (!document.getElementById('registration-form')) {
-                    root.innerHTML = `
-                        <div id="registration-form" class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-6">
-                            <h3 class="font-bold text-gray-700 mb-4">Input Peserta Baru</h3>
-                            <input id="inName" type="text" placeholder="Nama Lengkap..." class="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-xl font-bold focus:border-red-500 outline-none mb-3">
-                            <div class="flex gap-3 mb-4">
-                                <select id="inClass" class="flex-1 p-3 bg-gray-50 border-2 border-gray-100 rounded-xl font-bold text-gray-600 outline-none">
-                                    <option value="" disabled selected>Pilih Kelas</option>
-                                    <option value="Daud">Daud</option><option value="Daniel">Daniel</option>
-                                    <option value="Paulus">Paulus</option><option value="Ester">Ester</option>
-                                    <option value="GSM">GSM</option><option value="Orang Tua">Orang Tua</option><option value="Tamu Undangan">Tamu Undangan</option>
-                                </select>
-                                <select id="inSector" class="flex-1 p-3 bg-gray-50 border-2 border-gray-100 rounded-xl font-bold text-gray-600 outline-none">
-                                    <option value="" disabled selected>Sektor</option>
-                                    ${[...Array(12)].map((_,i)=>`<option value="Sektor ${i+1}">Sektor ${i+1}</option>`).join('')}
-                                </select>
-                            </div>
-                            <button onclick="preRegister()" class="w-full py-4 bg-red-600 text-white font-extrabold rounded-xl shadow-lg hover:bg-red-700 active:scale-95 transition-transform">LANJUT KONFIRMASI</button>
-                        </div>
-                        <div id="participant-list-container" class="space-y-3"></div>
-                    `;
-                }
-                renderParticipantListOnly(); // Render list peserta
-            } else if (state.tab === 'scan' || state.tab === 'gift') {
-                const isGift = state.tab === 'gift';
-                const color = isGift ? 'bg-purple-600' : 'bg-green-600';
-                const label = isGift ? 'Scanner Hadiah' : 'Scanner Absensi';
-                const hint = isGift ? 'Scan QR untuk ambil hadiah' : 'Scan QR untuk kehadiran';
-
-                root.innerHTML = `
-                    <div class="bg-white p-4 rounded-2xl shadow-sm text-center mb-6">
-                        <div class="flex items-center justify-center gap-2 mb-2">
-                            <span class="text-2xl">${isGift ? '🎁' : '📷'}</span>
-                            <h3 class="font-bold text-gray-700">${label}</h3>
-                        </div>
-                        <div id="scanRes" class="hidden"></div>
-                        <div id="reader" class="mb-4"></div>
-                        <p class="text-[10px] text-gray-400">${hint}</p>
-                    </div>
-                    <div class="bg-white p-4 rounded-2xl shadow-sm">
-                        <div class="text-sm font-bold text-gray-400 mb-2 uppercase">Manual ${isGift ? 'Ambil Hadiah' : 'Check-In'}</div>
-                        <input oninput="window.handleSearch(this)" type="text" placeholder="Cari nama..." class="w-full p-3 bg-gray-50 border rounded-xl mb-2 text-sm focus:outline-none focus:border-blue-500 transition-colors">
-                        <div id="manual-list" class="max-h-48 overflow-y-auto"></div>
-                    </div>
-                `;
-            } else if (state.tab === 'data') {
-                root.innerHTML = `
-                    <div class="bg-white p-4 rounded-2xl shadow-sm mb-4">
-                        <div class="grid grid-cols-3 gap-2 mb-2">
-                            <button onclick="exportData('p')" class="py-2 bg-green-50 text-green-700 rounded-lg text-[10px] font-bold border border-green-200">Exp. Jemaat</button>
-                            <button onclick="exportData('a')" class="py-2 bg-blue-50 text-blue-700 rounded-lg text-[10px] font-bold border border-blue-200">Exp. Absensi</button>
-                            <button onclick="exportData('g')" class="py-2 bg-purple-50 text-purple-700 rounded-lg text-[10px] font-bold border border-purple-200">Exp. Hadiah</button>
-                        </div>
-                        <button onclick="triggerImport()" class="w-full py-3 bg-gray-50 text-gray-600 rounded-xl text-xs font-bold border border-gray-200">Import CSV (Nama,Kelas,Sektor)</button>
-                    </div>
-                    <h3 class="font-bold text-gray-600 text-sm mb-2 px-1">Riwayat Kehadiran</h3>
-                    <div class="space-y-2">
-                        ${state.attendance.slice().reverse().map(a => `
-                            <div class="bg-white p-3 rounded-xl shadow-sm flex items-center justify-between border border-gray-100">
-                                <div>
-                                    <div class="font-bold text-gray-800">${a.name}</div>
-                                    <div class="text-[10px] text-gray-400">${a.timestamp}</div>
-                                </div>
-                                <span class="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-bold">Hadir</span>
-                            </div>
-                        `).join('')}
-                    </div>
-                    <div class="mt-8 text-center"><button onclick="resetData()" class="text-xs text-red-300 font-bold border border-red-100 px-3 py-1 rounded hover:bg-red-50 hover:text-red-500">Reset System</button></div>
-                `;
-            }
         };
 
         // Init
