@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Absensi Event Natal 2025 - GKPS Tangerang</title>
+    <title>Absensi Event Natal 2025</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     
@@ -12,16 +12,15 @@
     <style>
         body { font-family: 'Inter', sans-serif; }
         
-        /* CSS Scanner */
         #reader { 
             width: 100%; 
             background: #000; 
-            border-radius: 12px;
-            border: none;
+            border-radius: 12px; 
+            border: none; 
         }
         #reader video { 
             object-fit: cover; 
-            border-radius: 12px;
+            border-radius: 12px; 
             transform: scaleX(-1); 
         }
         #reader__dashboard_section_csr span, 
@@ -36,7 +35,6 @@
         .animate-pulse-soft { animation: pulse-soft 2s infinite; }
         img.qr-code { image-rendering: pixelated; }
         
-        /* Hide Scrollbar */
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
@@ -52,14 +50,14 @@
         
         <div id="loading" class="absolute inset-0 z-50 bg-white flex flex-col justify-center items-center">
             <div class="text-5xl mb-4 animate-bounce">❄️</div>
-            <div class="font-bold text-gray-500">Memuat Sistem GKPS...</div>
+            <div class="font-bold text-gray-500">Memuat Sistem...</div>
         </div>
 
-        <header class="bg-gradient-to-r from-red-800 to-red-600 text-white p-6 pb-14 shadow-lg">
+        <header class="bg-gradient-to-r from-red-800 to-red-600 text-white p-6 pb-12 shadow-lg">
             <div class="flex justify-between items-start">
                 <div>
                     <h1 class="text-3xl font-extrabold tracking-tight">NATAL 2025</h1>
-                    <p class="text-red-100 text-xs font-medium tracking-wider uppercase opacity-90">GKPS Tangerang</p>
+                    <p class="text-red-100 text-xs font-medium tracking-wider uppercase opacity-90">Sistem Absensi Terpadu</p>
                 </div>
                 <div class="text-right">
                     <div id="liveClock" class="text-xl font-mono font-bold">00:00</div>
@@ -83,7 +81,7 @@
             </div>
         </header>
 
-        <nav class="flex px-4 -mt-10 relative z-20 gap-2 overflow-x-auto pb-2 no-scrollbar">
+        <nav class="flex px-4 -mt-8 relative z-20 gap-2 overflow-x-auto pb-2 no-scrollbar">
             <button onclick="setTab('register')" id="tab-register" class="flex-1 py-3 px-4 rounded-xl shadow-lg text-xs font-bold transition-all transform hover:-translate-y-1 bg-white text-gray-400 whitespace-nowrap">📝 Daftar</button>
             <button onclick="setTab('find')" id="tab-find" class="flex-1 py-3 px-4 rounded-xl shadow-lg text-xs font-bold transition-all transform hover:-translate-y-1 bg-white text-gray-400 whitespace-nowrap">🎫 Tiket Saya</button>
             <button onclick="setTab('scan')" id="tab-scan" class="flex-1 py-3 px-4 rounded-xl shadow-lg text-xs font-bold transition-all transform hover:-translate-y-1 bg-white text-gray-400 whitespace-nowrap">📷 Absen</button>
@@ -247,27 +245,30 @@
             setTimeout(() => { t.classList.remove('opacity-0'); t.children[0].classList.replace('scale-95','scale-100'); }, 10);
         };
 
-        // Fitur Cari Tiket (Self-Service)
+        // --- FITUR CARI TIKET (FIXED) ---
         window.findMyTicket = () => {
-            const searchName = document.getElementById('findName').value.trim().toLowerCase();
-            const searchSector = document.getElementById('findSector').value;
+            const nameInput = document.getElementById('findName');
+            const sectorInput = document.getElementById('findSector');
+            
+            const name = nameInput.value.trim().toLowerCase();
+            const sector = sectorInput.value;
 
-            if(!searchName || !searchSector) {
-                alert("Mohon isi Nama dan Pilih Sektor untuk verifikasi.");
+            if(!name || !sector) {
+                alert("Mohon isi Nama Lengkap dan Sektor sesuai pendaftaran!");
                 return;
             }
 
-            // Cari peserta yang cocok (Nama mengandung input & Sektor sama)
+            // Pencarian Case Insensitive tapi Exact Match untuk keamanan
             const found = state.participants.find(p => 
-                p.name.toLowerCase() === searchName && 
-                p.sector === searchSector
+                p.name.trim().toLowerCase() === name && 
+                p.sector === sector
             );
 
             if (found) {
                 window.showTicket(found.name, found.classGrade, found.sector, found.qrCode);
-                document.getElementById('findName').value = ''; // Reset form
+                // nameInput.value = ''; // Opsional: Kosongkan form jika berhasil
             } else {
-                alert("❌ Data tidak ditemukan!\nPastikan Nama dan Sektor sesuai dengan saat pendaftaran.");
+                alert("❌ Data tidak ditemukan!\n\nPastikan:\n1. Nama sesuai ejaan saat daftar.\n2. Pilihan Sektor benar.");
             }
         };
 
@@ -317,10 +318,8 @@
             state.scanner.render((decodedText) => {
                 if(state.scanner) state.scanner.pause();
                 const p = state.participants.find(x => x.qrCode === decodedText);
-                
-                if(p) window.processScannedID(p.id); 
+                if(p) window.processScannedID(p.id);
                 else { beep('fail'); showScanResult(false, "❌ QR Tidak Dikenal"); }
-                
                 setTimeout(() => { if(state.scanner) state.scanner.resume(); }, 2500);
             }, (error) => {});
         };
@@ -349,12 +348,11 @@
             const container = document.getElementById('manual-list');
             if(!container) return;
             const filtered = state.participants.filter(p => p.name.toLowerCase().includes(state.searchTerm));
-            
             if(filtered.length === 0) {
                 container.innerHTML = '<div class="text-center text-gray-400 py-4 text-sm">Nama tidak ditemukan</div>';
                 return;
             }
-            container.innerHTML = generateListHTML(filtered, state.tab === 'gift'); 
+            container.innerHTML = generateListHTML(filtered, state.tab === 'gift');
         };
 
         function generateListHTML(list, isGiftMode) {
@@ -386,7 +384,7 @@
 
         window.switchDataView = (mode) => {
             state.dataViewMode = mode;
-            render(); 
+            render();
         }
 
         window.setTab = (t) => {
@@ -454,7 +452,6 @@
                 }
                 renderParticipantListOnly();
             } else if (state.tab === 'find') {
-                // RENDER TAB PENCARIAN TIKET
                 root.innerHTML = `
                     <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-6 text-center">
                         <div class="text-4xl mb-2">🎫</div>
@@ -635,6 +632,4 @@
 
         // Init
         setTab('register');
-    </script>
-</body>
-</html>
+    </script></body></html>
