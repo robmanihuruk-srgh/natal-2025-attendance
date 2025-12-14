@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Absensi Event Natal 2025</title>
+    <title>Absensi Event Natal 2025 - GKPS Tangerang</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     
@@ -12,7 +12,7 @@
     <style>
         body { font-family: 'Inter', sans-serif; }
         
-        /* CSS Scanner Khusus Laptop */
+        /* CSS Scanner */
         #reader { 
             width: 100%; 
             background: #000; 
@@ -52,14 +52,14 @@
         
         <div id="loading" class="absolute inset-0 z-50 bg-white flex flex-col justify-center items-center">
             <div class="text-5xl mb-4 animate-bounce">❄️</div>
-            <div class="font-bold text-gray-500">Memuat Sistem...</div>
+            <div class="font-bold text-gray-500">Memuat Sistem GKPS...</div>
         </div>
 
-        <header class="bg-gradient-to-r from-red-800 to-red-600 text-white p-6 pb-12 shadow-lg">
+        <header class="bg-gradient-to-r from-red-800 to-red-600 text-white p-6 pb-14 shadow-lg">
             <div class="flex justify-between items-start">
                 <div>
                     <h1 class="text-3xl font-extrabold tracking-tight">NATAL 2025</h1>
-                    <p class="text-red-100 text-xs font-medium tracking-wider uppercase opacity-90">Sistem Absensi Terpadu</p>
+                    <p class="text-red-100 text-xs font-medium tracking-wider uppercase opacity-90">GKPS Tangerang</p>
                 </div>
                 <div class="text-right">
                     <div id="liveClock" class="text-xl font-mono font-bold">00:00</div>
@@ -67,23 +67,23 @@
                 </div>
             </div>
             
-            <div class="flex gap-2 mt-6 overflow-x-auto pb-2 no-scrollbar">
-                <div class="bg-black/20 backdrop-blur-md rounded-xl p-3 min-w-[100px] border border-white/10">
+            <div class="flex gap-2 mt-6 overflow-x-auto pb-2">
+                <div class="bg-black/20 backdrop-blur-md rounded-xl p-3 min-w-[90px] border border-white/10">
                     <div class="text-2xl font-bold" id="statRegistered">0</div>
-                    <div class="text-[10px] uppercase font-bold text-red-100">Total Jemaat</div>
+                    <div class="text-[9px] uppercase font-bold text-red-100">Jemaat</div>
                 </div>
-                <div class="bg-black/20 backdrop-blur-md rounded-xl p-3 min-w-[100px] border border-white/10">
+                <div class="bg-black/20 backdrop-blur-md rounded-xl p-3 min-w-[90px] border border-white/10">
                     <div class="text-2xl font-bold text-green-300" id="statPresent">0</div>
-                    <div class="text-[10px] uppercase font-bold text-red-100">Hadir</div>
+                    <div class="text-[9px] uppercase font-bold text-red-100">Hadir</div>
                 </div>
-                <div class="bg-yellow-500/30 backdrop-blur-md rounded-xl p-3 min-w-[100px] border border-white/10">
+                <div class="bg-yellow-500/30 backdrop-blur-md rounded-xl p-3 min-w-[90px] border border-white/10">
                     <div class="text-2xl font-bold text-yellow-300" id="statGifts">0</div>
-                    <div class="text-[10px] uppercase font-bold text-red-100">Ambil Hadiah</div>
+                    <div class="text-[9px] uppercase font-bold text-red-100">Hadiah Keluar</div>
                 </div>
             </div>
         </header>
 
-        <nav class="flex px-4 -mt-8 relative z-20 gap-2 overflow-x-auto pb-2 no-scrollbar">
+        <nav class="flex px-4 -mt-10 relative z-20 gap-2 overflow-x-auto pb-2 no-scrollbar">
             <button onclick="setTab('register')" id="tab-register" class="flex-1 py-3 px-4 rounded-xl shadow-lg text-xs font-bold transition-all transform hover:-translate-y-1 bg-white text-gray-400 whitespace-nowrap">📝 Daftar</button>
             <button onclick="setTab('scan')" id="tab-scan" class="flex-1 py-3 px-4 rounded-xl shadow-lg text-xs font-bold transition-all transform hover:-translate-y-1 bg-white text-gray-400 whitespace-nowrap">📷 Absen</button>
             <button onclick="setTab('gift')" id="tab-gift" class="flex-1 py-3 px-4 rounded-xl shadow-lg text-xs font-bold transition-all transform hover:-translate-y-1 bg-white text-gray-400 whitespace-nowrap">🎁 Hadiah</button>
@@ -151,7 +151,6 @@
         const db = getDatabase(app);
         const ADMIN_PASS = "ADMIN123";
 
-        // --- STATE ---
         let state = {
             participants: [],
             attendance: [],
@@ -163,7 +162,6 @@
             searchTerm: ''
         };
 
-        // --- AUDIO ---
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         function beep(type = 'success') {
             if (audioCtx.state === 'suspended') audioCtx.resume();
@@ -176,7 +174,6 @@
             osc.start(); osc.stop(audioCtx.currentTime + 0.15);
         }
 
-        // --- UTILS ---
         const getClock = () => {
             const n = new Date();
             document.getElementById('liveClock').innerText = n.toLocaleTimeString('id-ID', {hour12: false});
@@ -359,13 +356,11 @@
             }).join('');
         }
 
-        // --- NEW: DATA VIEW SWITCHER ---
         window.switchDataView = (mode) => {
             state.dataViewMode = mode;
-            render(); // Re-render Data tab
+            render();
         }
 
-        // --- RENDER SYSTEM ---
         window.setTab = (t) => {
             if((state.tab === 'scan' || state.tab === 'gift') && (t !== 'scan' && t !== 'gift')) window.stopScanner();
             state.tab = t;
@@ -383,7 +378,6 @@
             if(t === 'scan' || t === 'gift') setTimeout(() => window.initScanner(), 100);
         };
 
-        // UI Functions
         function renderParticipantListOnly() {
             const container = document.getElementById('participant-list-container');
             if (container) {
@@ -456,42 +450,77 @@
             } else if (state.tab === 'data') {
                 const isGiftView = state.dataViewMode === 'gifts';
                 const dataToShow = isGiftView ? state.gifts : state.attendance;
-                const headerText = isGiftView ? 'Riwayat Pengambilan Hadiah' : 'Riwayat Kehadiran';
-                const badgeColor = isGiftView ? 'bg-purple-100 text-purple-700' : 'bg-green-100 text-green-700';
-                const badgeText = isGiftView ? 'DIAMBIL' : 'HADIR';
+                const headerText = isGiftView ? 'Laporan Pengambilan Hadiah' : 'Laporan Kehadiran Jemaat';
+                
+                // Styling Tombol Toggle
+                const btnAttendanceClass = !isGiftView 
+                    ? 'bg-blue-600 text-white shadow-lg transform -translate-y-1' 
+                    : 'bg-white text-gray-500 hover:bg-gray-100';
+                
+                const btnGiftClass = isGiftView 
+                    ? 'bg-purple-600 text-white shadow-lg transform -translate-y-1' 
+                    : 'bg-white text-gray-500 hover:bg-gray-100';
 
                 root.innerHTML = `
-                    <div class="bg-white p-4 rounded-2xl shadow-sm mb-4">
-                        <div class="flex gap-2 mb-4 p-1 bg-gray-100 rounded-lg">
-                            <button onclick="switchDataView('attendance')" class="flex-1 py-2 text-xs font-bold rounded-md transition-all ${!isGiftView ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-400 hover:text-gray-600'}">Data Kehadiran</button>
-                            <button onclick="switchDataView('gifts')" class="flex-1 py-2 text-xs font-bold rounded-md transition-all ${isGiftView ? 'bg-white text-purple-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'}">Data Hadiah</button>
+                    <div class="bg-white p-4 rounded-2xl shadow-sm mb-6">
+                        <div class="flex gap-2 mb-4 p-1 bg-gray-100 rounded-xl">
+                            <button onclick="switchDataView('attendance')" class="flex-1 py-3 text-xs font-bold rounded-lg transition-all ${btnAttendanceClass}">
+                                📋 Laporan Kehadiran
+                            </button>
+                            <button onclick="switchDataView('gifts')" class="flex-1 py-3 text-xs font-bold rounded-lg transition-all ${btnGiftClass}">
+                                🎁 Laporan Hadiah
+                            </button>
                         </div>
 
-                        <div class="grid grid-cols-3 gap-2 mb-2">
-                            <button onclick="exportData('p')" class="py-2 bg-green-50 text-green-700 rounded-lg text-[10px] font-bold border border-green-200">Exp. Jemaat</button>
-                            <button onclick="exportData('a')" class="py-2 bg-blue-50 text-blue-700 rounded-lg text-[10px] font-bold border border-blue-200">Exp. Absensi</button>
-                            <button onclick="exportData('g')" class="py-2 bg-purple-50 text-purple-700 rounded-lg text-[10px] font-bold border border-purple-200">Exp. Hadiah</button>
+                        <div class="grid grid-cols-2 gap-2 mb-4">
+                            <button onclick="exportData(state.dataViewMode === 'gifts' ? 'g' : 'a')" class="py-2 ${isGiftView ? 'bg-purple-50 text-purple-700 border-purple-200' : 'bg-blue-50 text-blue-700 border-blue-200'} rounded-lg text-[10px] font-bold border flex justify-center items-center gap-1">
+                                📥 Download Laporan Ini
+                            </button>
+                            <button onclick="exportData('p')" class="py-2 bg-green-50 text-green-700 rounded-lg text-[10px] font-bold border border-green-200">
+                                📥 Download Data Jemaat
+                            </button>
                         </div>
-                        <button onclick="triggerImport()" class="w-full py-3 bg-gray-50 text-gray-600 rounded-xl text-xs font-bold border border-gray-200">Import CSV (Nama,Kelas,Sektor)</button>
+                        
+                        <button onclick="triggerImport()" class="w-full py-3 bg-gray-50 text-gray-600 rounded-xl text-xs font-bold border border-gray-200 border-dashed">
+                            📂 Import Data Peserta (CSV)
+                        </button>
                     </div>
 
-                    <h3 class="font-bold text-gray-600 text-sm mb-2 px-1">${headerText} (${dataToShow.length})</h3>
-                    <div class="space-y-2">
+                    <div class="flex justify-between items-center px-2 mb-2">
+                        <h3 class="font-bold text-gray-700 text-sm">${headerText}</h3>
+                        <span class="text-xs font-bold bg-gray-200 text-gray-600 px-2 py-1 rounded-full">${dataToShow.length} Data</span>
+                    </div>
+
+                    <div class="space-y-2 pb-8">
+                        ${dataToShow.length === 0 ? `
+                            <div class="text-center py-10 text-gray-400 bg-white rounded-2xl border-2 border-dashed border-gray-100">
+                                <div class="text-4xl mb-2">📭</div>
+                                <div class="text-sm">Belum ada data</div>
+                            </div>
+                        ` : ''}
+                        
                         ${dataToShow.slice().reverse().map(item => `
-                            <div class="bg-white p-3 rounded-xl shadow-sm flex items-center justify-between border border-gray-100">
+                            <div class="bg-white p-3 rounded-xl shadow-sm flex items-center justify-between border-l-4 ${isGiftView ? 'border-purple-500' : 'border-blue-500'}">
                                 <div>
                                     <div class="font-bold text-gray-800">${item.name}</div>
                                     <div class="flex gap-2 text-[10px] text-gray-500 mt-1">
-                                        <span>${item.classGrade}</span> • <span>${item.sector}</span>
+                                        <span class="bg-gray-100 px-2 py-0.5 rounded">${item.classGrade}</span>
+                                        <span class="bg-gray-100 px-2 py-0.5 rounded">${item.sector}</span>
                                     </div>
-                                    <div class="text-[10px] text-gray-400 mt-1 font-mono">${item.timestamp}</div>
+                                    <div class="text-[10px] text-gray-400 mt-1 font-mono flex items-center gap-1">
+                                        🕒 ${item.timestamp}
+                                    </div>
                                 </div>
-                                <span class="${badgeColor} px-2 py-1 rounded text-xs font-bold">${badgeText}</span>
+                                <span class="${isGiftView ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'} px-3 py-1 rounded-lg text-[10px] font-bold">
+                                    ${isGiftView ? 'SUDAH DIAMBIL' : 'HADIR'}
+                                </span>
                             </div>
                         `).join('')}
-                        ${dataToShow.length === 0 ? '<div class="text-center py-8 text-gray-400 text-sm">Belum ada data</div>' : ''}
                     </div>
-                    <div class="mt-8 text-center"><button onclick="resetData()" class="text-xs text-red-300 font-bold border border-red-100 px-3 py-1 rounded hover:bg-red-50 hover:text-red-500">Reset System</button></div>
+                    
+                    <div class="mt-8 text-center opacity-50 hover:opacity-100 transition-opacity">
+                        <button onclick="resetData()" class="text-[10px] text-red-400 font-bold border border-red-200 px-4 py-2 rounded-full hover:bg-red-50">⚠️ Admin Reset System</button>
+                    </div>
                 `;
             }
         };
@@ -516,7 +545,7 @@
             link.click();
         };
 
-        window.importData = (input) => { /* ... Import Logic Same as Before ... */ 
+        window.importData = (input) => { 
              const f = input.files[0]; if(!f) return;
              const r = new FileReader();
              r.onload = e => {
