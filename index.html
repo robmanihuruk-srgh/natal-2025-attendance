@@ -40,6 +40,26 @@
         /* Hide Scrollbar */
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* Custom scrollbar for participant list */
+        .participant-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .participant-list::-webkit-scrollbar {
+            width: 6px;
+        }
+        .participant-list::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        .participant-list::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 10px;
+        }
+        .participant-list::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
     </style>
 </head>
 <body class="min-h-screen bg-gray-50 text-gray-800 font-sans">
@@ -261,6 +281,7 @@
             window.closeModal('confirmModal');
             document.getElementById('inName').value = '';
             
+            // Langsung tampilkan tiket setelah simpan
             window.showTicket(name, cls, sec, qr);
         };
 
@@ -408,9 +429,10 @@
             return list.map(p => {
                 let statusBadge = '';
                 let actionBtn = '';
+                const claimedGift = state.gifts.find(g => g.participantId === p.id);
+                
                 if (isGiftMode) {
-                    const claimed = state.gifts.find(g => g.participantId === p.id);
-                    if (claimed) statusBadge = `<span class="text-purple-600 font-bold text-xs bg-purple-100 px-3 py-1 rounded-lg">🎁 DIAMBIL</span>`;
+                    if (claimedGift) statusBadge = `<span class="text-purple-600 font-bold text-xs bg-purple-100 px-3 py-1 rounded-lg">🎁 DIAMBIL</span>`;
                     else actionBtn = `<button onclick="window.processScannedID('${p.id}')" class="bg-purple-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-purple-700">AMBIL</button>`;
                 } else {
                     const present = state.attendance.find(a => a.participantId === p.id);
@@ -424,6 +446,7 @@
                         <div class="flex gap-2 mt-1">
                             <span class="text-[10px] bg-gray-100 text-gray-700 px-2 py-0.5 rounded font-bold">${p.classGrade}</span>
                             <span class="text-[10px] bg-gray-100 text-gray-700 px-2 py-0.5 rounded font-bold">${p.sector}</span>
+                            ${claimedGift ? '<span class="text-[10px] bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded font-bold">🎁 Ambil</span>' : ''}
                         </div>
                     </div>
                     ${statusBadge || actionBtn}
@@ -456,20 +479,46 @@
         function renderParticipantListOnly() {
             const container = document.getElementById('participant-list-container');
             if (container) {
-                container.innerHTML = state.participants.slice().reverse().map(p => {
-                    const active = state.attendance.find(a => a.participantId === p.id);
-                    return `
-                    <div class="bg-white p-4 rounded-xl shadow-sm flex justify-between items-center border-l-4 ${active ? 'border-green-500 bg-green-50' : 'border-gray-200'}">
-                        <div>
-                            <div class="font-bold text-gray-800">${p.name}</div>
-                            <div class="flex gap-2 mt-1">
-                                <span class="text-[10px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded font-bold">${p.classGrade}</span>
-                                <span class="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded font-bold">${p.sector}</span>
-                            </div>
+                if (state.participants.length === 0) {
+                    container.innerHTML = `
+                        <div class="text-center py-8 text-gray-400">
+                            <div class="text-4xl mb-2">📝</div>
+                            <div class="text-sm">Belum ada peserta terdaftar</div>
                         </div>
-                        <button onclick="window.showTicket('${p.name}', '${p.classGrade}', '${p.sector}', '${p.qrCode}')" class="text-xs font-bold bg-gray-100 px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-200">TIKET</button>
-                    </div>`;
-                }).join('');
+                    `;
+                    return;
+                }
+                
+                container.innerHTML = `
+                    <div class="mb-4 flex justify-between items-center">
+                        <div>
+                            <h3 class="font-bold text-gray-700">Daftar Peserta Terdaftar</h3>
+                            <p class="text-xs text-gray-400">${state.participants.length} peserta</p>
+                        </div>
+                        <div class="text-xs font-bold bg-red-100 text-red-700 px-3 py-1 rounded-full">
+                            🎫 Semua Tiket
+                        </div>
+                    </div>
+                    <div class="participant-list space-y-3">
+                        ${state.participants.slice().reverse().map(p => {
+                            const active = state.attendance.find(a => a.participantId === p.id);
+                            const claimedGift = state.gifts.find(g => g.participantId === p.id);
+                            return `
+                            <div class="bg-white p-4 rounded-xl shadow-sm flex justify-between items-center border-l-4 ${active ? 'border-green-500' : claimedGift ? 'border-yellow-500' : 'border-gray-200'} hover:shadow-md transition-shadow">
+                                <div class="flex-1">
+                                    <div class="font-bold text-gray-800 text-sm mb-1">${p.name}</div>
+                                    <div class="flex gap-2">
+                                        <span class="text-[10px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded font-bold">${p.classGrade}</span>
+                                        <span class="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded font-bold">${p.sector}</span>
+                                        ${active ? '<span class="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded font-bold">✓ Hadir</span>' : ''}
+                                        ${claimedGift ? '<span class="text-[10px] bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded font-bold">🎁 Ambil</span>' : ''}
+                                    </div>
+                                </div>
+                                <!-- HAPUS TOMBOL LIHAT TIKET DI TAB DAFTAR -->
+                            </div>`;
+                        }).join('')}
+                    </div>
+                `;
             }
         }
 
@@ -735,35 +784,55 @@
             printWindow.document.close();
         };
 
+        // PERBAIKAN FUNGSI EXPORT DATA
         window.exportData = (type) => {
-            const BOM = "\uFEFF"; 
-            let csv = BOM + "data:text/csv;charset=utf-8,";
-            let filename = "";
-            let data = [];
+            try {
+                let csv = "";
+                let filename = "";
+                let data = [];
 
-            if (type === 'p') {
-                csv += "Nama,Kelas,Sektor,QR_Code,Waktu_Daftar\n";
-                data = state.participants;
-                filename = "Data_Jemaat_Natal_2025.csv";
-                data.forEach(x => { csv += `"${x.name}","${x.classGrade}","${x.sector}","${x.qrCode}","${x.registeredAt}"\n`; });
-            } else if (type === 'a') {
-                csv += "Nama,Kelas,Sektor,Waktu_Hadir\n";
-                data = state.attendance;
-                filename = "Laporan_Absensi_Natal_2025.csv";
-                data.forEach(x => { csv += `"${x.name}","${x.classGrade}","${x.sector}","${x.timestamp}"\n`; });
-            } else if (type === 'g') {
-                csv += "Nama,Kelas,Sektor,Waktu_Ambil_Hadiah\n";
-                data = state.gifts;
-                filename = "Laporan_Hadiah_Natal_2025.csv";
-                data.forEach(x => { csv += `"${x.name}","${x.classGrade}","${x.sector}","${x.timestamp}"\n`; });
+                if (type === 'p') {
+                    csv += "Nama,Kelas,Sektor,QR_Code,Waktu_Daftar\n";
+                    data = state.participants;
+                    filename = "Data_Jemaat_Natal_2025.csv";
+                    data.forEach(x => { 
+                        csv += `"${x.name || ''}","${x.classGrade || ''}","${x.sector || ''}","${x.qrCode || ''}","${x.registeredAt || ''}"\n`; 
+                    });
+                } else if (type === 'a') {
+                    csv += "Nama,Kelas,Sektor,Waktu_Hadir\n";
+                    data = state.attendance;
+                    filename = "Laporan_Absensi_Natal_2025.csv";
+                    data.forEach(x => { 
+                        csv += `"${x.name || ''}","${x.classGrade || ''}","${x.sector || ''}","${x.timestamp || ''}"\n`; 
+                    });
+                } else if (type === 'g') {
+                    csv += "Nama,Kelas,Sektor,Waktu_Ambil_Hadiah\n";
+                    data = state.gifts;
+                    filename = "Laporan_Hadiah_Natal_2025.csv";
+                    data.forEach(x => { 
+                        csv += `"${x.name || ''}","${x.classGrade || ''}","${x.sector || ''}","${x.timestamp || ''}"\n`; 
+                    });
+                }
+
+                // Buat blob dengan BOM untuk Excel
+                const BOM = "\uFEFF";
+                const blob = new Blob([BOM + csv], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement("a");
+                
+                if (navigator.msSaveBlob) { // IE 10+
+                    navigator.msSaveBlob(blob, filename);
+                } else {
+                    link.href = URL.createObjectURL(blob);
+                    link.download = filename;
+                    link.style.display = "none";
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                }
+            } catch (error) {
+                console.error("Error exporting data:", error);
+                alert("Terjadi kesalahan saat mengekspor data. Silakan coba lagi.");
             }
-
-            const link = document.createElement("a");
-            link.href = encodeURI(csv);
-            link.download = filename;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
         };
 
         window.importData = (input) => { 
