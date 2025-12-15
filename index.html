@@ -375,7 +375,7 @@
                     id: Date.now().toString(), participantId: p.id, name: p.name,
                     classGrade: p.classGrade, sector: p.sector, timestamp: fmtDate()
                 });
-                showScanResult(true, `🎁 ${p.name} Dapat Hadiah!`, 'bg-purple-600');
+                showScanResult(true, `🎁 ${p.name} Dapat Hadiah!`, 'bg-red-600');
             }
         };
 
@@ -432,12 +432,12 @@
                 const claimedGift = state.gifts.find(g => g.participantId === p.id);
                 
                 if (isGiftMode) {
-                    if (claimedGift) statusBadge = `<span class="text-purple-600 font-bold text-xs bg-purple-100 px-3 py-1 rounded-lg">🎁 DIAMBIL</span>`;
-                    else actionBtn = `<button onclick="window.processScannedID('${p.id}')" class="bg-purple-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-purple-700">AMBIL</button>`;
+                    if (claimedGift) statusBadge = `<span class="text-red-600 font-bold text-xs bg-red-50 border border-red-200 px-3 py-1 rounded-lg">DIAMBIL</span>`;
+                    else actionBtn = `<button onclick="window.processScannedID('${p.id}')" class="bg-red-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-red-700 active:scale-95 transition-transform">Ambil</button>`;
                 } else {
                     const present = state.attendance.find(a => a.participantId === p.id);
                     if (present) statusBadge = `<span class="text-green-600 font-bold text-xs bg-green-50 px-3 py-1 rounded-lg">HADIR</span>`;
-                    else actionBtn = `<button onclick="window.processScannedID('${p.id}')" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-blue-700">CHECK-IN</button>`;
+                    else actionBtn = `<button onclick="window.processScannedID('${p.id}')" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-blue-700 active:scale-95 transition-transform">CHECK-IN</button>`;
                 }
                 return `
                 <div class="flex items-center justify-between p-3 border-b border-gray-100 hover:bg-gray-50">
@@ -615,7 +615,7 @@
                 const isGift = state.tab === 'gift';
                 const label = isGift ? 'Scanner Hadiah' : 'Scanner Absensi';
                 const hint = isGift ? 'Scan QR untuk ambil hadiah' : 'Scan QR untuk kehadiran';
-                const color = isGift ? 'bg-purple-500' : 'bg-green-500';
+                const color = isGift ? 'bg-red-500' : 'bg-green-500';
 
                 root.innerHTML = `
                     <div class="bg-white p-4 rounded-2xl shadow-sm text-center mb-6">
@@ -643,7 +643,7 @@
                     : 'bg-white text-gray-500 hover:bg-gray-100';
                 
                 const btnGiftClass = isGiftView 
-                    ? 'bg-purple-600 text-white shadow-lg transform -translate-y-1' 
+                    ? 'bg-red-600 text-white shadow-lg transform -translate-y-1' 
                     : 'bg-white text-gray-500 hover:bg-gray-100';
 
                 root.innerHTML = `
@@ -665,7 +665,7 @@
                                 <button onclick="exportData('a')" class="py-3 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg text-[10px] font-bold hover:bg-blue-100 text-center">
                                     📥 Download Laporan Absensi
                                 </button>
-                                <button onclick="exportData('g')" class="py-3 bg-purple-50 text-purple-700 border border-purple-200 rounded-lg text-[10px] font-bold hover:bg-purple-100 text-center">
+                                <button onclick="exportData('g')" class="py-3 bg-red-50 text-red-700 border border-red-200 rounded-lg text-[10px] font-bold hover:bg-red-100 text-center">
                                     📥 Download Laporan Hadiah
                                 </button>
                             </div>
@@ -690,7 +690,7 @@
                         ` : ''}
                         
                         ${dataToShow.slice().reverse().map(item => `
-                            <div class="bg-white p-3 rounded-xl shadow-sm flex items-center justify-between border-l-4 ${isGiftView ? 'border-purple-500' : 'border-blue-500'}">
+                            <div class="bg-white p-3 rounded-xl shadow-sm flex items-center justify-between border-l-4 ${isGiftView ? 'border-red-500' : 'border-blue-500'}">
                                 <div>
                                     <div class="font-bold text-gray-800">${item.name}</div>
                                     <div class="flex gap-2 text-[10px] text-gray-500 mt-1">
@@ -701,7 +701,7 @@
                                         🕒 ${item.timestamp}
                                     </div>
                                 </div>
-                                <span class="${isGiftView ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'} px-3 py-1 rounded-lg text-[10px] font-bold">
+                                <span class="${isGiftView ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'} px-3 py-1 rounded-lg text-[10px] font-bold">
                                     ${isGiftView ? 'SUDAH DIAMBIL' : 'HADIR'}
                                 </span>
                             </div>
