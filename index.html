@@ -1,4 +1,4 @@
-<!DOCTYPE html>                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
@@ -12,30 +12,19 @@
     <style>
         body { font-family: 'Inter', sans-serif; }
         
-        #reader { 
-            width: 100%; 
-            background: #000; 
-            border-radius: 12px;
-            border: none;
-        }
-        #reader video { 
-            object-fit: cover; 
-            border-radius: 12px;
-            transform: scaleX(-1); 
-        }
-        #reader__dashboard_section_csr span, 
-        #reader__dashboard_section_swaplink { display: none !important; }
+        /* CSS Scanner */
+        #reader { width: 100%; background: #000; border-radius: 12px; border: none; }
+        #reader video { object-fit: cover; border-radius: 12px; transform: scaleX(-1); }
+        #reader__dashboard_section_csr span, #reader__dashboard_section_swaplink { display: none !important; }
         #reader__filescan_input_label { display: none; } 
         #reader__dashboard_section_csr button {
             background-color: #16a34a; color: white; padding: 8px 16px;
-            border-radius: 8px; border: none; font-weight: bold; margin-top: 10px;
+            border-radius: 8px; border: none; font-weight: bold; margin-top: 10px; cursor: pointer;
         }
 
         @keyframes pulse-soft { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
         .animate-pulse-soft { animation: pulse-soft 2s infinite; }
         img.qr-code { image-rendering: pixelated; }
-        
-        /* Hide Scrollbar */
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
@@ -84,7 +73,7 @@
 
         <nav class="flex px-4 -mt-10 relative z-20 gap-2 overflow-x-auto pb-2 no-scrollbar">
             <button onclick="setTab('register')" id="tab-register" class="flex-1 py-3 px-4 rounded-xl shadow-lg text-xs font-bold transition-all transform hover:-translate-y-1 bg-white text-gray-400 whitespace-nowrap">📝 Daftar</button>
-            <button onclick="setTab('find')" id="tab-find" class="flex-1 py-3 px-4 rounded-xl shadow-lg text-xs font-bold transition-all transform hover:-translate-y-1 bg-white text-gray-400 whitespace-nowrap">🎫 Tiket Saya</button>
+            <button onclick="setTab('find')" id="tab-find" class="flex-1 py-3 px-4 rounded-xl shadow-lg text-xs font-bold transition-all transform hover:-translate-y-1 bg-white text-gray-400 whitespace-nowrap">🎫 Cari Tiket</button>
             <button onclick="setTab('scan')" id="tab-scan" class="flex-1 py-3 px-4 rounded-xl shadow-lg text-xs font-bold transition-all transform hover:-translate-y-1 bg-white text-gray-400 whitespace-nowrap">📷 Absen</button>
             <button onclick="setTab('gift')" id="tab-gift" class="flex-1 py-3 px-4 rounded-xl shadow-lg text-xs font-bold transition-all transform hover:-translate-y-1 bg-white text-gray-400 whitespace-nowrap">🎁 Hadiah</button>
             <button onclick="setTab('data')" id="tab-data" class="flex-1 py-3 px-4 rounded-xl shadow-lg text-xs font-bold transition-all transform hover:-translate-y-1 bg-white text-gray-400 whitespace-nowrap">📊 Laporan</button>
@@ -112,7 +101,7 @@
         </div>
     </div>
 
-    <div id="ticketModal" class="fixed inset-0 z-[70] flex items-center justify-center bg-black/90 hidden backdrop-blur-sm transition-opacity opacity-0">
+    <div id="ticketModal" class="fixed inset-0 z-[999] flex items-center justify-center bg-black/90 hidden backdrop-blur-sm transition-opacity opacity-0">
         <div class="bg-white w-full max-w-sm rounded-2xl p-6 text-center transform scale-95 transition-transform relative">
             <button onclick="closeModal('ticketModal')" class="absolute top-4 right-4 text-2xl text-gray-400 hover:text-red-500">×</button>
             <div class="text-red-600 font-bold tracking-widest text-xs mb-1 uppercase">Tiket Natal</div>
@@ -135,7 +124,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, push, onValue, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        // --- CONFIG FIREBASE ---
         const firebaseConfig = {
             apiKey: "AIzaSyBzka8Ps_nf-8zDA2tMDmqEMw6zMoy3aeM",
             authDomain: "eventnatal2025.firebaseapp.com",
@@ -197,7 +185,6 @@
             if (state.tab === 'data' && state.dataViewMode === 'attendance') render();
             document.getElementById('loading').style.display = 'none';
         });
-
         onValue(ref(db, 'gifts'), s => {
             state.gifts = s.val() ? Object.values(s.val()) : [];
             updateStats();
@@ -237,16 +224,11 @@
             window.closeModal('confirmModal');
             document.getElementById('inName').value = '';
             
-            document.getElementById('ticName').innerText = name;
-            document.getElementById('ticClass').innerText = cls;
-            document.getElementById('ticSector').innerText = sec;
-            document.getElementById('ticQR').src = getQR(qr);
-            const t = document.getElementById('ticketModal');
-            t.classList.remove('hidden');
-            setTimeout(() => { t.classList.remove('opacity-0'); t.children[0].classList.replace('scale-95','scale-100'); }, 10);
+            // Tampilkan Tiket Langsung
+            window.showTicket(name, cls, sec, qr);
         };
 
-        // --- FITUR CARI TIKET ---
+        // --- CARI TIKET (FIXED) ---
         window.findMyTicket = () => {
             const nameInput = document.getElementById('findName');
             const sectorInput = document.getElementById('findSector');
@@ -314,7 +296,6 @@
             if(state.scanner) return;
             const config = { fps: 10, qrbox: 450, aspectRatio: 1.0, disableFlip: false };
             state.scanner = new Html5QrcodeScanner("reader", config, false);
-            
             state.scanner.render((decodedText) => {
                 if(state.scanner) state.scanner.pause();
                 const p = state.participants.find(x => x.qrCode === decodedText);
@@ -325,10 +306,7 @@
         };
 
         window.stopScanner = () => {
-            if(state.scanner) {
-                state.scanner.clear().catch(e => console.error(e));
-                state.scanner = null;
-            }
+            if(state.scanner) { state.scanner.clear().catch(console.error); state.scanner = null; }
         };
 
         function showScanResult(success, msg, customColor) {
@@ -342,51 +320,9 @@
             }
         }
 
-        // --- HELPERS ---
-        window.handleSearch = (el) => {
-            state.searchTerm = el.value.toLowerCase();
-            const container = document.getElementById('manual-list');
-            if(!container) return;
-            const filtered = state.participants.filter(p => p.name.toLowerCase().includes(state.searchTerm));
-            if(filtered.length === 0) {
-                container.innerHTML = '<div class="text-center text-gray-400 py-4 text-sm">Nama tidak ditemukan</div>';
-                return;
-            }
-            container.innerHTML = generateListHTML(filtered, state.tab === 'gift');
-        };
-
-        function generateListHTML(list, isGiftMode) {
-            return list.map(p => {
-                let statusBadge = '';
-                let actionBtn = '';
-                if (isGiftMode) {
-                    const claimed = state.gifts.find(g => g.participantId === p.id);
-                    if (claimed) statusBadge = `<span class="text-purple-600 font-bold text-xs bg-purple-100 px-3 py-1 rounded-lg">🎁 DIAMBIL</span>`;
-                    else actionBtn = `<button onclick="window.processScannedID('${p.id}')" class="bg-purple-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-purple-700">AMBIL</button>`;
-                } else {
-                    const present = state.attendance.find(a => a.participantId === p.id);
-                    if (present) statusBadge = `<span class="text-green-600 font-bold text-xs bg-green-50 px-3 py-1 rounded-lg">HADIR</span>`;
-                    else actionBtn = `<button onclick="window.processScannedID('${p.id}')" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-blue-700">CHECK-IN</button>`;
-                }
-                return `
-                <div class="flex items-center justify-between p-3 border-b border-gray-100 hover:bg-gray-50">
-                    <div>
-                        <div class="font-bold text-gray-800 text-sm">${p.name}</div>
-                        <div class="flex gap-2 mt-1">
-                            <span class="text-[10px] bg-gray-100 text-gray-700 px-2 py-0.5 rounded font-bold">${p.classGrade}</span>
-                            <span class="text-[10px] bg-gray-100 text-gray-700 px-2 py-0.5 rounded font-bold">${p.sector}</span>
-                        </div>
-                    </div>
-                    ${statusBadge || actionBtn}
-                </div>`;
-            }).join('');
-        }
-
-        window.switchDataView = (mode) => {
-            state.dataViewMode = mode;
-            render();
-        }
-
+        // --- RENDER SYSTEM ---
+        window.switchDataView = (mode) => { state.dataViewMode = mode; render(); }
+        
         window.setTab = (t) => {
             if((state.tab === 'scan' || state.tab === 'gift') && (t !== 'scan' && t !== 'gift')) window.stopScanner();
             state.tab = t;
@@ -403,26 +339,6 @@
             render();
             if(t === 'scan' || t === 'gift') setTimeout(() => window.initScanner(), 100);
         };
-
-        function renderParticipantListOnly() {
-            const container = document.getElementById('participant-list-container');
-            if (container) {
-                container.innerHTML = state.participants.slice().reverse().map(p => {
-                    const active = state.attendance.find(a => a.participantId === p.id);
-                    return `
-                    <div class="bg-white p-4 rounded-xl shadow-sm flex justify-between items-center border-l-4 ${active ? 'border-green-500 bg-green-50' : 'border-gray-200'}">
-                        <div>
-                            <div class="font-bold text-gray-800">${p.name}</div>
-                            <div class="flex gap-2 mt-1">
-                                <span class="text-[10px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded font-bold">${p.classGrade}</span>
-                                <span class="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded font-bold">${p.sector}</span>
-                            </div>
-                        </div>
-                        <button onclick="window.showTicket('${p.name}', '${p.classGrade}', '${p.sector}', '${p.qrCode}')" class="text-xs font-bold bg-gray-100 px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-200">TIKET</button>
-                    </div>`;
-                }).join('');
-            }
-        }
 
         window.render = () => {
             const root = document.getElementById('content-area');
@@ -494,84 +410,72 @@
                 const isGiftView = state.dataViewMode === 'gifts';
                 const dataToShow = isGiftView ? state.gifts : state.attendance;
                 const headerText = isGiftView ? 'Laporan Pengambilan Hadiah' : 'Laporan Kehadiran Jemaat';
-                
-                const btnAttendanceClass = !isGiftView 
-                    ? 'bg-blue-600 text-white shadow-lg transform -translate-y-1' 
-                    : 'bg-white text-gray-500 hover:bg-gray-100';
-                
-                const btnGiftClass = isGiftView 
-                    ? 'bg-purple-600 text-white shadow-lg transform -translate-y-1' 
-                    : 'bg-white text-gray-500 hover:bg-gray-100';
+                const btnAttendanceClass = !isGiftView ? 'bg-blue-600 text-white shadow-lg' : 'bg-white text-gray-500';
+                const btnGiftClass = isGiftView ? 'bg-purple-600 text-white shadow-lg' : 'bg-white text-gray-500';
 
                 root.innerHTML = `
                     <div class="bg-white p-4 rounded-2xl shadow-sm mb-6">
                         <div class="flex gap-2 mb-4 p-1 bg-gray-100 rounded-xl">
-                            <button onclick="switchDataView('attendance')" class="flex-1 py-3 text-xs font-bold rounded-lg transition-all ${btnAttendanceClass}">
-                                📋 Laporan Kehadiran
-                            </button>
-                            <button onclick="switchDataView('gifts')" class="flex-1 py-3 text-xs font-bold rounded-lg transition-all ${btnGiftClass}">
-                                🎁 Laporan Hadiah
-                            </button>
+                            <button onclick="switchDataView('attendance')" class="flex-1 py-3 text-xs font-bold rounded-lg transition-all ${btnAttendanceClass}">📋 Kehadiran</button>
+                            <button onclick="switchDataView('gifts')" class="flex-1 py-3 text-xs font-bold rounded-lg transition-all ${btnGiftClass}">🎁 Hadiah</button>
                         </div>
-
-                        <div class="grid grid-cols-1 gap-2 mb-4">
-                            <button onclick="exportData('p')" class="w-full py-3 bg-green-50 text-green-700 border border-green-200 rounded-lg text-[10px] font-bold hover:bg-green-100 text-center">
-                                📥 Download Data Seluruh Jemaat (Master)
-                            </button>
-                            <div class="grid grid-cols-2 gap-2">
-                                <button onclick="exportData('a')" class="py-3 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg text-[10px] font-bold hover:bg-blue-100 text-center">
-                                    📥 Download Laporan Absensi
-                                </button>
-                                <button onclick="exportData('g')" class="py-3 bg-purple-50 text-purple-700 border border-purple-200 rounded-lg text-[10px] font-bold hover:bg-purple-100 text-center">
-                                    📥 Download Laporan Hadiah
-                                </button>
+                        <div class="flex flex-col gap-2">
+                            <button onclick="exportData('p')" class="py-2 bg-green-50 text-green-700 rounded-lg text-[10px] font-bold border border-green-200">📥 Download Data Jemaat (Master)</button>
+                            <div class="flex gap-2">
+                                <button onclick="exportData('a')" class="flex-1 py-2 bg-blue-50 text-blue-700 rounded-lg text-[10px] font-bold border border-blue-200">📥 Download Laporan Absensi</button>
+                                <button onclick="exportData('g')" class="flex-1 py-2 bg-purple-50 text-purple-700 rounded-lg text-[10px] font-bold border border-purple-200">📥 Download Laporan Hadiah</button>
                             </div>
+                            <button onclick="triggerImport()" class="py-2 bg-gray-50 text-gray-600 rounded-lg text-[10px] font-bold border border-gray-200 dashed">📂 Import CSV</button>
                         </div>
-                        
-                        <button onclick="triggerImport()" class="w-full py-3 bg-gray-50 text-gray-600 rounded-xl text-xs font-bold border border-gray-200 border-dashed hover:bg-gray-50">
-                            📂 Import Data Peserta (CSV)
-                        </button>
                     </div>
-
                     <div class="flex justify-between items-center px-2 mb-2">
                         <h3 class="font-bold text-gray-700 text-sm">${headerText}</h3>
                         <span class="text-xs font-bold bg-gray-200 text-gray-600 px-2 py-1 rounded-full">${dataToShow.length} Data</span>
                     </div>
-
                     <div class="space-y-2 pb-8">
-                        ${dataToShow.length === 0 ? `
-                            <div class="text-center py-10 text-gray-400 bg-white rounded-2xl border-2 border-dashed border-gray-100">
-                                <div class="text-4xl mb-2">📭</div>
-                                <div class="text-sm">Belum ada data</div>
-                            </div>
-                        ` : ''}
-                        
                         ${dataToShow.slice().reverse().map(item => `
                             <div class="bg-white p-3 rounded-xl shadow-sm flex items-center justify-between border-l-4 ${isGiftView ? 'border-purple-500' : 'border-blue-500'}">
-                                <div>
-                                    <div class="font-bold text-gray-800">${item.name}</div>
-                                    <div class="flex gap-2 text-[10px] text-gray-500 mt-1">
-                                        <span class="bg-gray-100 px-2 py-0.5 rounded">${item.classGrade}</span>
-                                        <span class="bg-gray-100 px-2 py-0.5 rounded">${item.sector}</span>
-                                    </div>
-                                    <div class="text-[10px] text-gray-400 mt-1 font-mono flex items-center gap-1">
-                                        🕒 ${item.timestamp}
-                                    </div>
-                                </div>
-                                <span class="${isGiftView ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'} px-3 py-1 rounded-lg text-[10px] font-bold">
-                                    ${isGiftView ? 'SUDAH DIAMBIL' : 'HADIR'}
-                                </span>
+                                <div><div class="font-bold text-gray-800">${item.name}</div><div class="flex gap-2 text-[10px] text-gray-500 mt-1"><span class="bg-gray-100 px-2 py-0.5 rounded">${item.classGrade}</span><span class="bg-gray-100 px-2 py-0.5 rounded">${item.sector}</span></div><div class="text-[10px] text-gray-400 mt-1 font-mono">🕒 ${item.timestamp}</div></div>
+                                <span class="${isGiftView ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'} px-3 py-1 rounded-lg text-[10px] font-bold">${isGiftView ? 'DIAMBIL' : 'HADIR'}</span>
                             </div>
                         `).join('')}
                     </div>
-                    
-                    <div class="mt-8 text-center opacity-50 hover:opacity-100 transition-opacity">
-                        <button onclick="resetData()" class="text-[10px] text-red-400 font-bold border border-red-200 px-4 py-2 rounded-full hover:bg-red-50">⚠️ Admin Reset System</button>
-                    </div>
+                    <div class="mt-8 text-center opacity-50 hover:opacity-100"><button onclick="resetData()" class="text-[10px] text-red-400 font-bold border border-red-200 px-4 py-2 rounded-full">⚠️ Reset System</button></div>
                 `;
             }
         };
 
+        // UI HELPERS
+        function renderParticipantListOnly() {
+            const container = document.getElementById('participant-list-container');
+            if (container) {
+                container.innerHTML = state.participants.slice().reverse().map(p => {
+                    const active = state.attendance.find(a => a.participantId === p.id);
+                    return `<div class="bg-white p-4 rounded-xl shadow-sm flex justify-between items-center border-l-4 ${active ? 'border-green-500 bg-green-50' : 'border-gray-200'}"><div><div class="font-bold text-gray-800">${p.name}</div><div class="flex gap-2 mt-1"><span class="text-[10px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded font-bold">${p.classGrade}</span><span class="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded font-bold">${p.sector}</span></div></div><button onclick="window.showTicket('${p.name}', '${p.classGrade}', '${p.sector}', '${p.qrCode}')" class="text-xs font-bold bg-gray-100 px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-200">TIKET</button></div>`;
+                }).join('');
+            }
+        }
+        
+        window.handleSearch = (el) => {
+            const val = el.value.toLowerCase();
+            const container = document.getElementById('manual-list');
+            if(!container) return;
+            const filtered = state.participants.filter(p => p.name.toLowerCase().includes(val));
+            container.innerHTML = filtered.map(p => {
+                let statusBadge = '', actionBtn = '';
+                if(state.tab === 'gift') {
+                    const claimed = state.gifts.find(g => g.participantId === p.id);
+                    if(claimed) statusBadge = `<span class="text-purple-600 font-bold text-xs bg-purple-100 px-3 py-1 rounded-lg">DIAMBIL</span>`;
+                    else actionBtn = `<button onclick="window.processScannedID('${p.id}')" class="bg-purple-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-purple-700">AMBIL</button>`;
+                } else {
+                    const present = state.attendance.find(a => a.participantId === p.id);
+                    if(present) statusBadge = `<span class="text-green-600 font-bold text-xs bg-green-50 px-3 py-1 rounded-lg">HADIR</span>`;
+                    else actionBtn = `<button onclick="window.processScannedID('${p.id}')" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-blue-700">CHECK-IN</button>`;
+                }
+                return `<div class="flex items-center justify-between p-3 border-b border-gray-100 hover:bg-gray-50"><div><div class="font-bold text-gray-800 text-sm">${p.name}</div><div class="flex gap-2 mt-1"><span class="text-[10px] bg-gray-100 text-gray-700 px-2 py-0.5 rounded font-bold">${p.classGrade}</span><span class="text-[10px] bg-gray-100 text-gray-700 px-2 py-0.5 rounded font-bold">${p.sector}</span></div></div>${statusBadge || actionBtn}</div>`;
+            }).join('');
+        };
+        
         window.showTicket = (n, c, s, q) => {
             document.getElementById('ticName').innerText = n;
             document.getElementById('ticClass').innerText = c;
@@ -581,10 +485,17 @@
             t.classList.remove('hidden');
             setTimeout(() => t.children[0].classList.replace('scale-95','scale-100'), 10);
         };
+        
+        window.closeModal = (id) => {
+            const m = document.getElementById(id);
+            m.classList.add('opacity-0');
+            m.children[0].classList.replace('scale-100','scale-95');
+            setTimeout(() => m.classList.add('hidden'), 300);
+        };
 
-        // --- EXPORT FUNCTION (FINAL FIX) ---
+        // --- EXPORT FUNCTION ---
         window.exportData = (type) => {
-            // BOM Header untuk Excel
+            // BOM Header untuk Excel agar encoding UTF-8 terbaca benar
             const BOM = "\uFEFF"; 
             let csv = BOM + "data:text/csv;charset=utf-8,";
             let filename = "";
@@ -620,7 +531,8 @@
             link.click();
             document.body.removeChild(link);
         };
-
+        
+        window.triggerImport = () => document.getElementById('importInput').click();
         window.importData = (input) => { 
              const f = input.files[0]; if(!f) return;
              const r = new FileReader();
@@ -632,10 +544,7 @@
                      const [n, cl, sc] = l.split(',').map(x => x?.replace(/"/g,'').trim());
                      if(n) {
                          const id = (Date.now()+i).toString();
-                         push(ref(db, 'participants'), {
-                             id, name: n, classGrade: cl||'Daud', sector: sc||'Sektor 1',
-                             qrCode: `NATAL-${id.slice(-6)}`, registeredAt: fmtDate(), timestamp: Date.now()
-                         });
+                         push(ref(db, 'participants'), { id, name: n, classGrade: cl||'Daud', sector: sc||'Sektor 1', qrCode: `NATAL-${id.slice(-6)}`, registeredAt: fmtDate(), timestamp: Date.now() });
                          c++;
                      }
                  });
@@ -643,1429 +552,8 @@
              };
              r.readAsText(f);
         };
-        window.triggerImport = () => document.getElementById('importInput').click();
-
-        window.resetData = () => {
-            if(prompt("Password Admin:") === ADMIN_PASS && confirm("Hapus SEMUA data?")) {
-                set(ref(db, 'participants'), null);
-                set(ref(db, 'attendance'), null);
-                set(ref(db, 'gifts'), null);
-                alert("Database Reset.");
-            }
-        };
-
-        window.closeModal = (id) => {
-            const m = document.getElementById(id);
-            m.classList.add('opacity-0');
-            m.children[0].classList.replace('scale-100','scale-95');
-            setTimeout(() => m.classList.add('hidden'), 300);
-        };
+        window.resetData = () => { if(prompt("Password Admin:") === ADMIN_PASS && confirm("Hapus SEMUA data?")) { set(ref(db, 'participants'), null); set(ref(db, 'attendance'), null); set(ref(db, 'gifts'), null); alert("Database Reset."); }};
 
         // Init
         setTab('register');
     </script></body></html>
-  <!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Absensi Event Natal 2025 - GKPS Tangerang</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
-    
-    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
-    
-    <style>
-        body { font-family: 'Inter', sans-serif; }
-        
-        #reader { 
-            width: 100%; 
-            background: #000; 
-            border-radius: 12px;
-            border: none;
-        }
-        #reader video { 
-            object-fit: cover; 
-            border-radius: 12px;
-            transform: scaleX(-1); 
-        }
-        #reader__dashboard_section_csr span, 
-        #reader__dashboard_section_swaplink { display: none !important; }
-        #reader__filescan_input_label { display: none; } 
-        #reader__dashboard_section_csr button {
-            background-color: #16a34a; color: white; padding: 8px 16px;
-            border-radius: 8px; border: none; font-weight: bold; margin-top: 10px;
-        }
-
-        @keyframes pulse-soft { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
-        .animate-pulse-soft { animation: pulse-soft 2s infinite; }
-        img.qr-code { image-rendering: pixelated; }
-        
-        /* Hide Scrollbar */
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-    </style>
-</head>
-<body class="min-h-screen bg-gray-50 text-gray-800 font-sans">
-
-    <div class="fixed inset-0 pointer-events-none opacity-5 overflow-hidden z-0 select-none">
-        <div class="absolute top-10 left-10 text-9xl">🎄</div>
-        <div class="absolute bottom-10 right-10 text-9xl">🎅</div>
-    </div>
-
-    <div id="app" class="relative z-10 max-w-md mx-auto md:max-w-4xl min-h-screen bg-white shadow-2xl md:my-8 md:rounded-3xl overflow-hidden flex flex-col">
-        
-        <div id="loading" class="absolute inset-0 z-50 bg-white flex flex-col justify-center items-center">
-            <div class="text-5xl mb-4 animate-bounce">❄️</div>
-            <div class="font-bold text-gray-500">Memuat Sistem GKPS...</div>
-        </div>
-
-        <header class="bg-gradient-to-r from-red-800 to-red-600 text-white p-6 pb-14 shadow-lg">
-            <div class="flex justify-between items-start">
-                <div>
-                    <h1 class="text-3xl font-extrabold tracking-tight">NATAL 2025</h1>
-                    <p class="text-red-100 text-xs font-medium tracking-wider uppercase opacity-90">GKPS Tangerang</p>
-                </div>
-                <div class="text-right">
-                    <div id="liveClock" class="text-xl font-mono font-bold">00:00</div>
-                    <div id="liveDate" class="text-[10px] text-red-200 uppercase font-semibold">...</div>
-                </div>
-            </div>
-            
-            <div class="flex gap-2 mt-6 overflow-x-auto pb-2 no-scrollbar">
-                <div class="bg-black/20 backdrop-blur-md rounded-xl p-3 min-w-[90px] border border-white/10">
-                    <div class="text-2xl font-bold" id="statRegistered">0</div>
-                    <div class="text-[9px] uppercase font-bold text-red-100">Jemaat</div>
-                </div>
-                <div class="bg-black/20 backdrop-blur-md rounded-xl p-3 min-w-[90px] border border-white/10">
-                    <div class="text-2xl font-bold text-green-300" id="statPresent">0</div>
-                    <div class="text-[9px] uppercase font-bold text-red-100">Hadir</div>
-                </div>
-                <div class="bg-yellow-500/30 backdrop-blur-md rounded-xl p-3 min-w-[90px] border border-white/10">
-                    <div class="text-2xl font-bold text-yellow-300" id="statGifts">0</div>
-                    <div class="text-[9px] uppercase font-bold text-red-100">Hadiah</div>
-                </div>
-            </div>
-        </header>
-
-        <nav class="flex px-4 -mt-10 relative z-20 gap-2 overflow-x-auto pb-2 no-scrollbar">
-            <button onclick="setTab('register')" id="tab-register" class="flex-1 py-3 px-4 rounded-xl shadow-lg text-xs font-bold transition-all transform hover:-translate-y-1 bg-white text-gray-400 whitespace-nowrap">📝 Daftar</button>
-            <button onclick="setTab('find')" id="tab-find" class="flex-1 py-3 px-4 rounded-xl shadow-lg text-xs font-bold transition-all transform hover:-translate-y-1 bg-white text-gray-400 whitespace-nowrap">🎫 Tiket Saya</button>
-            <button onclick="setTab('scan')" id="tab-scan" class="flex-1 py-3 px-4 rounded-xl shadow-lg text-xs font-bold transition-all transform hover:-translate-y-1 bg-white text-gray-400 whitespace-nowrap">📷 Absen</button>
-            <button onclick="setTab('gift')" id="tab-gift" class="flex-1 py-3 px-4 rounded-xl shadow-lg text-xs font-bold transition-all transform hover:-translate-y-1 bg-white text-gray-400 whitespace-nowrap">🎁 Hadiah</button>
-            <button onclick="setTab('data')" id="tab-data" class="flex-1 py-3 px-4 rounded-xl shadow-lg text-xs font-bold transition-all transform hover:-translate-y-1 bg-white text-gray-400 whitespace-nowrap">📊 Laporan</button>
-        </nav>
-
-        <main class="flex-1 p-6 overflow-y-auto bg-gray-50 pb-24">
-            <div id="content-area"></div>
-        </main>
-    </div>
-
-    <div id="confirmModal" class="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 hidden backdrop-blur-sm transition-opacity opacity-0">
-        <div class="bg-white w-full max-w-sm rounded-2xl p-6 shadow-2xl transform scale-95 transition-transform">
-            <h3 class="text-lg font-bold text-gray-800 mb-4 border-b pb-2">Konfirmasi Data</h3>
-            <div class="space-y-3 mb-6">
-                <div><div class="text-xs text-gray-400 font-bold uppercase">Nama</div><div id="confName" class="font-bold text-lg text-gray-800"></div></div>
-                <div class="flex gap-4">
-                    <div class="flex-1"><div class="text-xs text-gray-400 font-bold uppercase">Kelas</div><div id="confClass" class="font-bold text-purple-600"></div></div>
-                    <div class="flex-1"><div class="text-xs text-gray-400 font-bold uppercase">Sektor</div><div id="confSector" class="font-bold text-blue-600"></div></div>
-                </div>
-            </div>
-            <div class="flex gap-3">
-                <button onclick="closeModal('confirmModal')" class="flex-1 py-3 rounded-lg font-bold text-gray-600 bg-gray-100 hover:bg-gray-200">Ubah</button>
-                <button onclick="processSave()" class="flex-1 py-3 rounded-lg font-bold text-white bg-green-600 hover:bg-green-700 shadow-lg">Simpan</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="ticketModal" class="fixed inset-0 z-[70] flex items-center justify-center bg-black/90 hidden backdrop-blur-sm transition-opacity opacity-0">
-        <div class="bg-white w-full max-w-sm rounded-2xl p-6 text-center transform scale-95 transition-transform relative">
-            <button onclick="closeModal('ticketModal')" class="absolute top-4 right-4 text-2xl text-gray-400 hover:text-red-500">×</button>
-            <div class="text-red-600 font-bold tracking-widest text-xs mb-1 uppercase">Tiket Natal</div>
-            <h2 id="ticName" class="text-2xl font-black text-gray-800 leading-tight mb-2">Nama</h2>
-            <div class="flex justify-center gap-2 mb-4">
-                <span id="ticClass" class="px-2 py-1 bg-purple-100 text-purple-700 text-xs font-bold rounded">Kelas</span>
-                <span id="ticSector" class="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-bold rounded">Sektor</span>
-            </div>
-            <div class="bg-white border-4 border-gray-200 p-4 rounded-xl shadow-inner mb-4 inline-block">
-                <img id="ticQR" src="" class="w-48 h-48 object-contain qr-code">
-            </div>
-            <p class="text-xs text-gray-400 font-medium">Gunakan QR ini untuk Absensi & Pengambilan Hadiah</p>
-            <button onclick="closeModal('ticketModal')" class="mt-4 w-full py-3 bg-gray-100 font-bold text-gray-600 rounded-xl hover:bg-gray-200">Tutup</button>
-        </div>
-    </div>
-
-    <input type="file" id="importInput" accept=".csv" class="hidden" onchange="handleImport(this)">
-
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, push, onValue, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-
-        // --- CONFIG FIREBASE ---
-        const firebaseConfig = {
-            apiKey: "AIzaSyBzka8Ps_nf-8zDA2tMDmqEMw6zMoy3aeM",
-            authDomain: "eventnatal2025.firebaseapp.com",
-            databaseURL: "https://eventnatal2025-default-rtdb.asia-southeast1.firebasedatabase.app/", 
-            projectId: "eventnatal2025",
-            storageBucket: "eventnatal2025.firebasestorage.app",
-            messagingSenderId: "961570070334",
-            appId: "1:961570070334:web:888638e9de275e27b2566f",
-            measurementId: "G-QX5GJPEDCF"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
-        const ADMIN_PASS = "ADMIN123";
-
-        let state = {
-            participants: [],
-            attendance: [],
-            gifts: [],
-            tab: 'register',
-            dataViewMode: 'attendance', 
-            scanner: null,
-            tempData: null,
-            searchTerm: ''
-        };
-
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        function beep(type = 'success') {
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.type = type === 'success' ? 'sine' : 'square';
-            osc.frequency.setValueAtTime(type === 'success' ? 880 : 300, audioCtx.currentTime);
-            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-            osc.connect(gain); gain.connect(audioCtx.destination);
-            osc.start(); osc.stop(audioCtx.currentTime + 0.15);
-        }
-
-        const getClock = () => {
-            const n = new Date();
-            document.getElementById('liveClock').innerText = n.toLocaleTimeString('id-ID', {hour12: false});
-            document.getElementById('liveDate').innerText = n.toLocaleDateString('id-ID', {weekday:'long', day:'numeric', month:'long'});
-        };
-        setInterval(getClock, 1000); getClock();
-
-        const fmtDate = () => new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
-        const getQR = (txt) => `https://api.qrserver.com/v1/create-qr-code/?size=500x500&margin=20&ecc=L&color=000000&bgcolor=ffffff&data=${encodeURIComponent(txt)}`;
-
-        // --- LISTENERS ---
-        onValue(ref(db, 'participants'), s => {
-            state.participants = s.val() ? Object.values(s.val()) : [];
-            updateStats();
-            if (state.tab === 'register') renderParticipantListOnly();
-        });
-        
-        onValue(ref(db, 'attendance'), s => {
-            state.attendance = s.val() ? Object.values(s.val()) : [];
-            updateStats();
-            if (state.tab === 'data' && state.dataViewMode === 'attendance') render();
-            document.getElementById('loading').style.display = 'none';
-        });
-
-        onValue(ref(db, 'gifts'), s => {
-            state.gifts = s.val() ? Object.values(s.val()) : [];
-            updateStats();
-            if (state.tab === 'data' && state.dataViewMode === 'gifts') render();
-        });
-
-        function updateStats() {
-            document.getElementById('statRegistered').innerText = state.participants.length;
-            document.getElementById('statPresent').innerText = state.attendance.length;
-            document.getElementById('statGifts').innerText = state.gifts.length;
-        }
-
-        // --- CORE LOGIC ---
-        window.preRegister = () => {
-            const name = document.getElementById('inName').value.trim();
-            const cls = document.getElementById('inClass').value;
-            const sec = document.getElementById('inSector').value;
-            if(!name || !cls || !sec) return alert("Mohon lengkapi semua data!");
-            state.tempData = { name, cls, sec };
-            document.getElementById('confName').innerText = name;
-            document.getElementById('confClass').innerText = cls;
-            document.getElementById('confSector').innerText = sec;
-            const m = document.getElementById('confirmModal');
-            m.classList.remove('hidden');
-            setTimeout(() => { m.classList.remove('opacity-0'); m.children[0].classList.replace('scale-95','scale-100'); }, 10);
-        };
-
-        window.processSave = () => {
-            if(!state.tempData) return;
-            const { name, cls, sec } = state.tempData;
-            const id = Date.now().toString();
-            const qr = `NATAL-${id.slice(-6)}`;
-            push(ref(db, 'participants'), {
-                id, name, classGrade: cls, sector: sec, qrCode: qr,
-                registeredAt: fmtDate(), timestamp: Date.now()
-            });
-            window.closeModal('confirmModal');
-            document.getElementById('inName').value = '';
-            
-            document.getElementById('ticName').innerText = name;
-            document.getElementById('ticClass').innerText = cls;
-            document.getElementById('ticSector').innerText = sec;
-            document.getElementById('ticQR').src = getQR(qr);
-            const t = document.getElementById('ticketModal');
-            t.classList.remove('hidden');
-            setTimeout(() => { t.classList.remove('opacity-0'); t.children[0].classList.replace('scale-95','scale-100'); }, 10);
-        };
-
-        // --- FITUR CARI TIKET ---
-        window.findMyTicket = () => {
-            const nameInput = document.getElementById('findName');
-            const sectorInput = document.getElementById('findSector');
-            const name = nameInput.value.trim().toLowerCase();
-            const sector = sectorInput.value;
-
-            if(!name || !sector) {
-                alert("Mohon isi Nama Lengkap dan Sektor sesuai pendaftaran!");
-                return;
-            }
-
-            const found = state.participants.find(p => 
-                p.name.trim().toLowerCase() === name && 
-                p.sector === sector
-            );
-
-            if (found) {
-                window.showTicket(found.name, found.classGrade, found.sector, found.qrCode);
-                document.getElementById('findName').value = ''; 
-                document.getElementById('findSector').value = ''; 
-            } else {
-                alert("❌ Data tidak ditemukan!\n\nPastikan:\n1. Nama sesuai ejaan saat daftar.\n2. Pilihan Sektor benar.");
-            }
-        };
-
-        window.processScannedID = (pid) => {
-            const p = state.participants.find(x => x.id === pid);
-            if(!p) return;
-            if (state.tab === 'gift') window.claimGift(p);
-            else window.doCheckIn(p);
-        };
-
-        window.doCheckIn = (p) => {
-            const exists = state.attendance.find(x => x.participantId === p.id);
-            if(exists) {
-                beep('fail');
-                showScanResult(false, `⚠️ ${p.name} Sudah Absen!`);
-            } else {
-                beep('success');
-                push(ref(db, 'attendance'), {
-                    id: Date.now().toString(), participantId: p.id, name: p.name,
-                    classGrade: p.classGrade, sector: p.sector, timestamp: fmtDate()
-                });
-                showScanResult(true, `✅ ${p.name} Hadir!`);
-            }
-        };
-
-        window.claimGift = (p) => {
-            const alreadyClaimed = state.gifts.find(x => x.participantId === p.id);
-            if(alreadyClaimed) {
-                beep('fail');
-                showScanResult(false, `⚠️ ${p.name} Sudah Ambil Hadiah!`, 'bg-yellow-500');
-            } else {
-                beep('success');
-                push(ref(db, 'gifts'), {
-                    id: Date.now().toString(), participantId: p.id, name: p.name,
-                    classGrade: p.classGrade, sector: p.sector, timestamp: fmtDate()
-                });
-                showScanResult(true, `🎁 ${p.name} Dapat Hadiah!`, 'bg-purple-600');
-            }
-        };
-
-        // --- SCANNER SYSTEM ---
-        window.initScanner = () => {
-            if(state.scanner) return;
-            const config = { fps: 10, qrbox: 450, aspectRatio: 1.0, disableFlip: false };
-            state.scanner = new Html5QrcodeScanner("reader", config, false);
-            
-            state.scanner.render((decodedText) => {
-                if(state.scanner) state.scanner.pause();
-                const p = state.participants.find(x => x.qrCode === decodedText);
-                if(p) window.processScannedID(p.id);
-                else { beep('fail'); showScanResult(false, "❌ QR Tidak Dikenal"); }
-                setTimeout(() => { if(state.scanner) state.scanner.resume(); }, 2500);
-            }, (error) => {});
-        };
-
-        window.stopScanner = () => {
-            if(state.scanner) {
-                state.scanner.clear().catch(e => console.error(e));
-                state.scanner = null;
-            }
-        };
-
-        function showScanResult(success, msg, customColor) {
-            const el = document.getElementById('scanRes');
-            if(el) {
-                el.innerHTML = msg;
-                const color = customColor ? customColor : (success ? 'bg-green-500' : 'bg-red-500');
-                el.className = `p-4 rounded-xl font-bold text-center text-white shadow-lg animate-pulse mb-4 ${color}`;
-                el.classList.remove('hidden');
-                setTimeout(() => { el.classList.add('hidden'); }, 2000);
-            }
-        }
-
-        // --- HELPERS ---
-        window.handleSearch = (el) => {
-            state.searchTerm = el.value.toLowerCase();
-            const container = document.getElementById('manual-list');
-            if(!container) return;
-            const filtered = state.participants.filter(p => p.name.toLowerCase().includes(state.searchTerm));
-            if(filtered.length === 0) {
-                container.innerHTML = '<div class="text-center text-gray-400 py-4 text-sm">Nama tidak ditemukan</div>';
-                return;
-            }
-            container.innerHTML = generateListHTML(filtered, state.tab === 'gift');
-        };
-
-        function generateListHTML(list, isGiftMode) {
-            return list.map(p => {
-                let statusBadge = '';
-                let actionBtn = '';
-                if (isGiftMode) {
-                    const claimed = state.gifts.find(g => g.participantId === p.id);
-                    if (claimed) statusBadge = `<span class="text-purple-600 font-bold text-xs bg-purple-100 px-3 py-1 rounded-lg">🎁 DIAMBIL</span>`;
-                    else actionBtn = `<button onclick="window.processScannedID('${p.id}')" class="bg-purple-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-purple-700">AMBIL</button>`;
-                } else {
-                    const present = state.attendance.find(a => a.participantId === p.id);
-                    if (present) statusBadge = `<span class="text-green-600 font-bold text-xs bg-green-50 px-3 py-1 rounded-lg">HADIR</span>`;
-                    else actionBtn = `<button onclick="window.processScannedID('${p.id}')" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-blue-700">CHECK-IN</button>`;
-                }
-                return `
-                <div class="flex items-center justify-between p-3 border-b border-gray-100 hover:bg-gray-50">
-                    <div>
-                        <div class="font-bold text-gray-800 text-sm">${p.name}</div>
-                        <div class="flex gap-2 mt-1">
-                            <span class="text-[10px] bg-gray-100 text-gray-700 px-2 py-0.5 rounded font-bold">${p.classGrade}</span>
-                            <span class="text-[10px] bg-gray-100 text-gray-700 px-2 py-0.5 rounded font-bold">${p.sector}</span>
-                        </div>
-                    </div>
-                    ${statusBadge || actionBtn}
-                </div>`;
-            }).join('');
-        }
-
-        window.switchDataView = (mode) => {
-            state.dataViewMode = mode;
-            render();
-        }
-
-        window.setTab = (t) => {
-            if((state.tab === 'scan' || state.tab === 'gift') && (t !== 'scan' && t !== 'gift')) window.stopScanner();
-            state.tab = t;
-            ['register','find','scan','gift','data'].forEach(x => {
-                const btn = document.getElementById(`tab-${x}`);
-                if(x === t) {
-                    btn.classList.remove('bg-white','text-gray-400');
-                    btn.classList.add('bg-red-600','text-white','shadow-xl','-translate-y-1');
-                } else {
-                    btn.classList.add('bg-white','text-gray-400');
-                    btn.classList.remove('bg-red-600','text-white','shadow-xl','-translate-y-1');
-                }
-            });
-            render();
-            if(t === 'scan' || t === 'gift') setTimeout(() => window.initScanner(), 100);
-        };
-
-        function renderParticipantListOnly() {
-            const container = document.getElementById('participant-list-container');
-            if (container) {
-                container.innerHTML = state.participants.slice().reverse().map(p => {
-                    const active = state.attendance.find(a => a.participantId === p.id);
-                    return `
-                    <div class="bg-white p-4 rounded-xl shadow-sm flex justify-between items-center border-l-4 ${active ? 'border-green-500 bg-green-50' : 'border-gray-200'}">
-                        <div>
-                            <div class="font-bold text-gray-800">${p.name}</div>
-                            <div class="flex gap-2 mt-1">
-                                <span class="text-[10px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded font-bold">${p.classGrade}</span>
-                                <span class="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded font-bold">${p.sector}</span>
-                            </div>
-                        </div>
-                        <button onclick="window.showTicket('${p.name}', '${p.classGrade}', '${p.sector}', '${p.qrCode}')" class="text-xs font-bold bg-gray-100 px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-200">TIKET</button>
-                    </div>`;
-                }).join('');
-            }
-        }
-
-        window.render = () => {
-            const root = document.getElementById('content-area');
-            
-            if (state.tab === 'register') {
-                if (!document.getElementById('registration-form')) {
-                    root.innerHTML = `
-                        <div id="registration-form" class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-6">
-                            <h3 class="font-bold text-gray-700 mb-4">Input Peserta Baru</h3>
-                            <input id="inName" type="text" placeholder="Nama Lengkap..." class="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-xl font-bold focus:border-red-500 outline-none mb-3">
-                            <div class="flex gap-3 mb-4">
-                                <select id="inClass" class="flex-1 p-3 bg-gray-50 border-2 border-gray-100 rounded-xl font-bold text-gray-600 outline-none">
-                                    <option value="" disabled selected>Pilih Kelas</option>
-                                    <option value="Daud">Daud</option><option value="Daniel">Daniel</option>
-                                    <option value="Paulus">Paulus</option><option value="Ester">Ester</option>
-                                    <option value="GSM">GSM</option><option value="Orang Tua">Orang Tua</option><option value="Tamu Undangan">Tamu Undangan</option>
-                                </select>
-                                <select id="inSector" class="flex-1 p-3 bg-gray-50 border-2 border-gray-100 rounded-xl font-bold text-gray-600 outline-none">
-                                    <option value="" disabled selected>Sektor</option>
-                                    ${[...Array(12)].map((_,i)=>`<option value="Sektor ${i+1}">Sektor ${i+1}</option>`).join('')}
-                                </select>
-                            </div>
-                            <button onclick="preRegister()" class="w-full py-4 bg-red-600 text-white font-extrabold rounded-xl shadow-lg hover:bg-red-700 active:scale-95 transition-transform">LANJUT KONFIRMASI</button>
-                        </div>
-                        <div id="participant-list-container" class="space-y-3"></div>
-                    `;
-                }
-                renderParticipantListOnly();
-            } else if (state.tab === 'find') {
-                root.innerHTML = `
-                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-6 text-center">
-                        <div class="text-4xl mb-2">🎫</div>
-                        <h3 class="font-bold text-gray-700 mb-2">Cari Tiket Saya</h3>
-                        <p class="text-xs text-gray-400 mb-6">Masukkan nama persis sesuai pendaftaran</p>
-                        <input id="findName" type="text" placeholder="Nama Lengkap Anda..." class="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-xl font-bold focus:border-blue-500 outline-none mb-3">
-                        <div class="relative mb-6">
-                            <select id="findSector" class="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-xl font-bold text-gray-600 focus:outline-none focus:border-blue-500 appearance-none">
-                                <option value="" disabled selected>Pilih Sektor Anda</option>
-                                ${[...Array(12)].map((_,i)=>`<option value="Sektor ${i+1}">Sektor ${i+1}</option>`).join('')}
-                            </select>
-                            <div class="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-gray-500">▼</div>
-                        </div>
-                        <button onclick="findMyTicket()" class="w-full py-4 bg-blue-600 text-white font-extrabold rounded-xl shadow-lg hover:bg-blue-700 active:scale-95 transition-transform">CARI TIKET</button>
-                    </div>
-                `;
-            } else if (state.tab === 'scan' || state.tab === 'gift') {
-                const isGift = state.tab === 'gift';
-                const label = isGift ? 'Scanner Hadiah' : 'Scanner Absensi';
-                const hint = isGift ? 'Scan QR untuk ambil hadiah' : 'Scan QR untuk kehadiran';
-                const color = isGift ? 'bg-purple-500' : 'bg-green-500';
-
-                root.innerHTML = `
-                    <div class="bg-white p-4 rounded-2xl shadow-sm text-center mb-6">
-                        <div class="flex items-center justify-center gap-2 mb-2">
-                            <span class="text-2xl">${isGift ? '🎁' : '📷'}</span>
-                            <h3 class="font-bold text-gray-700">${label}</h3>
-                        </div>
-                        <div id="scanRes" class="hidden"></div>
-                        <div id="reader" class="mb-4"></div>
-                        <p class="text-[10px] text-gray-400">${hint}</p>
-                    </div>
-                    <div class="bg-white p-4 rounded-2xl shadow-sm">
-                        <div class="text-sm font-bold text-gray-400 mb-2 uppercase">Manual ${isGift ? 'Ambil Hadiah' : 'Check-In'}</div>
-                        <input oninput="window.handleSearch(this)" type="text" placeholder="Cari nama..." class="w-full p-3 bg-gray-50 border rounded-xl mb-2 text-sm focus:outline-none focus:border-blue-500 transition-colors">
-                        <div id="manual-list" class="max-h-48 overflow-y-auto"></div>
-                    </div>
-                `;
-            } else if (state.tab === 'data') {
-                const isGiftView = state.dataViewMode === 'gifts';
-                const dataToShow = isGiftView ? state.gifts : state.attendance;
-                const headerText = isGiftView ? 'Laporan Pengambilan Hadiah' : 'Laporan Kehadiran Jemaat';
-                
-                const btnAttendanceClass = !isGiftView 
-                    ? 'bg-blue-600 text-white shadow-lg transform -translate-y-1' 
-                    : 'bg-white text-gray-500 hover:bg-gray-100';
-                
-                const btnGiftClass = isGiftView 
-                    ? 'bg-purple-600 text-white shadow-lg transform -translate-y-1' 
-                    : 'bg-white text-gray-500 hover:bg-gray-100';
-
-                root.innerHTML = `
-                    <div class="bg-white p-4 rounded-2xl shadow-sm mb-6">
-                        <div class="flex gap-2 mb-4 p-1 bg-gray-100 rounded-xl">
-                            <button onclick="switchDataView('attendance')" class="flex-1 py-3 text-xs font-bold rounded-lg transition-all ${btnAttendanceClass}">
-                                📋 Laporan Kehadiran
-                            </button>
-                            <button onclick="switchDataView('gifts')" class="flex-1 py-3 text-xs font-bold rounded-lg transition-all ${btnGiftClass}">
-                                🎁 Laporan Hadiah
-                            </button>
-                        </div>
-
-                        <div class="grid grid-cols-1 gap-2 mb-4">
-                            <button onclick="exportData('p')" class="w-full py-3 bg-green-50 text-green-700 border border-green-200 rounded-lg text-[10px] font-bold hover:bg-green-100 text-center">
-                                📥 Download Data Seluruh Jemaat (Master)
-                            </button>
-                            <div class="grid grid-cols-2 gap-2">
-                                <button onclick="exportData('a')" class="py-3 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg text-[10px] font-bold hover:bg-blue-100 text-center">
-                                    📥 Download Laporan Absensi
-                                </button>
-                                <button onclick="exportData('g')" class="py-3 bg-purple-50 text-purple-700 border border-purple-200 rounded-lg text-[10px] font-bold hover:bg-purple-100 text-center">
-                                    📥 Download Laporan Hadiah
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <button onclick="triggerImport()" class="w-full py-3 bg-gray-50 text-gray-600 rounded-xl text-xs font-bold border border-gray-200 border-dashed hover:bg-gray-50">
-                            📂 Import Data Peserta (CSV)
-                        </button>
-                    </div>
-
-                    <div class="flex justify-between items-center px-2 mb-2">
-                        <h3 class="font-bold text-gray-700 text-sm">${headerText}</h3>
-                        <span class="text-xs font-bold bg-gray-200 text-gray-600 px-2 py-1 rounded-full">${dataToShow.length} Data</span>
-                    </div>
-
-                    <div class="space-y-2 pb-8">
-                        ${dataToShow.length === 0 ? `
-                            <div class="text-center py-10 text-gray-400 bg-white rounded-2xl border-2 border-dashed border-gray-100">
-                                <div class="text-4xl mb-2">📭</div>
-                                <div class="text-sm">Belum ada data</div>
-                            </div>
-                        ` : ''}
-                        
-                        ${dataToShow.slice().reverse().map(item => `
-                            <div class="bg-white p-3 rounded-xl shadow-sm flex items-center justify-between border-l-4 ${isGiftView ? 'border-purple-500' : 'border-blue-500'}">
-                                <div>
-                                    <div class="font-bold text-gray-800">${item.name}</div>
-                                    <div class="flex gap-2 text-[10px] text-gray-500 mt-1">
-                                        <span class="bg-gray-100 px-2 py-0.5 rounded">${item.classGrade}</span>
-                                        <span class="bg-gray-100 px-2 py-0.5 rounded">${item.sector}</span>
-                                    </div>
-                                    <div class="text-[10px] text-gray-400 mt-1 font-mono flex items-center gap-1">
-                                        🕒 ${item.timestamp}
-                                    </div>
-                                </div>
-                                <span class="${isGiftView ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'} px-3 py-1 rounded-lg text-[10px] font-bold">
-                                    ${isGiftView ? 'SUDAH DIAMBIL' : 'HADIR'}
-                                </span>
-                            </div>
-                        `).join('')}
-                    </div>
-                    
-                    <div class="mt-8 text-center opacity-50 hover:opacity-100 transition-opacity">
-                        <button onclick="resetData()" class="text-[10px] text-red-400 font-bold border border-red-200 px-4 py-2 rounded-full hover:bg-red-50">⚠️ Admin Reset System</button>
-                    </div>
-                `;
-            }
-        };
-
-        window.showTicket = (n, c, s, q) => {
-            document.getElementById('ticName').innerText = n;
-            document.getElementById('ticClass').innerText = c;
-            document.getElementById('ticSector').innerText = s;
-            document.getElementById('ticQR').src = getQR(q);
-            const t = document.getElementById('ticketModal');
-            t.classList.remove('hidden');
-            setTimeout(() => t.children[0].classList.replace('scale-95','scale-100'), 10);
-        };
-
-        // --- EXPORT FUNCTION (FINAL FIX) ---
-        window.exportData = (type) => {
-            // BOM Header untuk Excel
-            const BOM = "\uFEFF"; 
-            let csv = BOM + "data:text/csv;charset=utf-8,";
-            let filename = "";
-            let data = [];
-
-            if (type === 'p') {
-                csv += "Nama,Kelas,Sektor,QR_Code,Waktu_Daftar\n";
-                data = state.participants;
-                filename = "Data_Jemaat_Natal_2025.csv";
-                data.forEach(x => {
-                    csv += `"${x.name}","${x.classGrade}","${x.sector}","${x.qrCode}","${x.registeredAt}"\n`;
-                });
-            } else if (type === 'a') {
-                csv += "Nama,Kelas,Sektor,Waktu_Hadir\n";
-                data = state.attendance;
-                filename = "Laporan_Absensi_Natal_2025.csv";
-                data.forEach(x => {
-                    csv += `"${x.name}","${x.classGrade}","${x.sector}","${x.timestamp}"\n`;
-                });
-            } else if (type === 'g') {
-                csv += "Nama,Kelas,Sektor,Waktu_Ambil_Hadiah\n";
-                data = state.gifts;
-                filename = "Laporan_Hadiah_Natal_2025.csv";
-                data.forEach(x => {
-                    csv += `"${x.name}","${x.classGrade}","${x.sector}","${x.timestamp}"\n`;
-                });
-            }
-
-            const link = document.createElement("a");
-            link.href = encodeURI(csv);
-            link.download = filename;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        };
-
-        window.importData = (input) => { 
-             const f = input.files[0]; if(!f) return;
-             const r = new FileReader();
-             r.onload = e => {
-                 const lines = e.target.result.split('\n');
-                 let c = 0;
-                 lines.forEach((l,i) => {
-                     if(i===0) return;
-                     const [n, cl, sc] = l.split(',').map(x => x?.replace(/"/g,'').trim());
-                     if(n) {
-                         const id = (Date.now()+i).toString();
-                         push(ref(db, 'participants'), {
-                             id, name: n, classGrade: cl||'Daud', sector: sc||'Sektor 1',
-                             qrCode: `NATAL-${id.slice(-6)}`, registeredAt: fmtDate(), timestamp: Date.now()
-                         });
-                         c++;
-                     }
-                 });
-                 alert(`Import ${c} data sukses!`); input.value = '';
-             };
-             r.readAsText(f);
-        };
-        window.triggerImport = () => document.getElementById('importInput').click();
-
-        window.resetData = () => {
-            if(prompt("Password Admin:") === ADMIN_PASS && confirm("Hapus SEMUA data?")) {
-                set(ref(db, 'participants'), null);
-                set(ref(db, 'attendance'), null);
-                set(ref(db, 'gifts'), null);
-                alert("Database Reset.");
-            }
-        };
-
-        window.closeModal = (id) => {
-            const m = document.getElementById(id);
-            m.classList.add('opacity-0');
-            m.children[0].classList.replace('scale-100','scale-95');
-            setTimeout(() => m.classList.add('hidden'), 300);
-        };
-
-        // Init
-        setTab('register');
-    </script></body></html>
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Absensi Event Natal 2025 - GKPS Tangerang</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
-    
-    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
-    
-    <style>
-        body { font-family: 'Inter', sans-serif; }
-        
-        #reader { 
-            width: 100%; 
-            background: #000; 
-            border-radius: 12px;
-            border: none;
-        }
-        #reader video { 
-            object-fit: cover; 
-            border-radius: 12px;
-            transform: scaleX(-1); 
-        }
-        #reader__dashboard_section_csr span, 
-        #reader__dashboard_section_swaplink { display: none !important; }
-        #reader__filescan_input_label { display: none; } 
-        #reader__dashboard_section_csr button {
-            background-color: #16a34a; color: white; padding: 8px 16px;
-            border-radius: 8px; border: none; font-weight: bold; margin-top: 10px;
-        }
-
-        @keyframes pulse-soft { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
-        .animate-pulse-soft { animation: pulse-soft 2s infinite; }
-        img.qr-code { image-rendering: pixelated; }
-        
-        /* Hide Scrollbar */
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-    </style>
-</head>
-<body class="min-h-screen bg-gray-50 text-gray-800 font-sans">
-
-    <div class="fixed inset-0 pointer-events-none opacity-5 overflow-hidden z-0 select-none">
-        <div class="absolute top-10 left-10 text-9xl">🎄</div>
-        <div class="absolute bottom-10 right-10 text-9xl">🎅</div>
-    </div>
-
-    <div id="app" class="relative z-10 max-w-md mx-auto md:max-w-4xl min-h-screen bg-white shadow-2xl md:my-8 md:rounded-3xl overflow-hidden flex flex-col">
-        
-        <div id="loading" class="absolute inset-0 z-50 bg-white flex flex-col justify-center items-center">
-            <div class="text-5xl mb-4 animate-bounce">❄️</div>
-            <div class="font-bold text-gray-500">Memuat Sistem GKPS...</div>
-        </div>
-
-        <header class="bg-gradient-to-r from-red-800 to-red-600 text-white p-6 pb-14 shadow-lg">
-            <div class="flex justify-between items-start">
-                <div>
-                    <h1 class="text-3xl font-extrabold tracking-tight">NATAL 2025</h1>
-                    <p class="text-red-100 text-xs font-medium tracking-wider uppercase opacity-90">GKPS Tangerang</p>
-                </div>
-                <div class="text-right">
-                    <div id="liveClock" class="text-xl font-mono font-bold">00:00</div>
-                    <div id="liveDate" class="text-[10px] text-red-200 uppercase font-semibold">...</div>
-                </div>
-            </div>
-            
-            <div class="flex gap-2 mt-6 overflow-x-auto pb-2 no-scrollbar">
-                <div class="bg-black/20 backdrop-blur-md rounded-xl p-3 min-w-[90px] border border-white/10">
-                    <div class="text-2xl font-bold" id="statRegistered">0</div>
-                    <div class="text-[9px] uppercase font-bold text-red-100">Jemaat</div>
-                </div>
-                <div class="bg-black/20 backdrop-blur-md rounded-xl p-3 min-w-[90px] border border-white/10">
-                    <div class="text-2xl font-bold text-green-300" id="statPresent">0</div>
-                    <div class="text-[9px] uppercase font-bold text-red-100">Hadir</div>
-                </div>
-                <div class="bg-yellow-500/30 backdrop-blur-md rounded-xl p-3 min-w-[90px] border border-white/10">
-                    <div class="text-2xl font-bold text-yellow-300" id="statGifts">0</div>
-                    <div class="text-[9px] uppercase font-bold text-red-100">Hadiah</div>
-                </div>
-            </div>
-        </header>
-
-        <nav class="flex px-4 -mt-10 relative z-20 gap-2 overflow-x-auto pb-2 no-scrollbar">
-            <button onclick="setTab('register')" id="tab-register" class="flex-1 py-3 px-4 rounded-xl shadow-lg text-xs font-bold transition-all transform hover:-translate-y-1 bg-white text-gray-400 whitespace-nowrap">📝 Daftar</button>
-            <button onclick="setTab('find')" id="tab-find" class="flex-1 py-3 px-4 rounded-xl shadow-lg text-xs font-bold transition-all transform hover:-translate-y-1 bg-white text-gray-400 whitespace-nowrap">🎫 Tiket Saya</button>
-            <button onclick="setTab('scan')" id="tab-scan" class="flex-1 py-3 px-4 rounded-xl shadow-lg text-xs font-bold transition-all transform hover:-translate-y-1 bg-white text-gray-400 whitespace-nowrap">📷 Absen</button>
-            <button onclick="setTab('gift')" id="tab-gift" class="flex-1 py-3 px-4 rounded-xl shadow-lg text-xs font-bold transition-all transform hover:-translate-y-1 bg-white text-gray-400 whitespace-nowrap">🎁 Hadiah</button>
-            <button onclick="setTab('data')" id="tab-data" class="flex-1 py-3 px-4 rounded-xl shadow-lg text-xs font-bold transition-all transform hover:-translate-y-1 bg-white text-gray-400 whitespace-nowrap">📊 Laporan</button>
-        </nav>
-
-        <main class="flex-1 p-6 overflow-y-auto bg-gray-50 pb-24">
-            <div id="content-area"></div>
-        </main>
-    </div>
-
-    <div id="confirmModal" class="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 hidden backdrop-blur-sm transition-opacity opacity-0">
-        <div class="bg-white w-full max-w-sm rounded-2xl p-6 shadow-2xl transform scale-95 transition-transform">
-            <h3 class="text-lg font-bold text-gray-800 mb-4 border-b pb-2">Konfirmasi Data</h3>
-            <div class="space-y-3 mb-6">
-                <div><div class="text-xs text-gray-400 font-bold uppercase">Nama</div><div id="confName" class="font-bold text-lg text-gray-800"></div></div>
-                <div class="flex gap-4">
-                    <div class="flex-1"><div class="text-xs text-gray-400 font-bold uppercase">Kelas</div><div id="confClass" class="font-bold text-purple-600"></div></div>
-                    <div class="flex-1"><div class="text-xs text-gray-400 font-bold uppercase">Sektor</div><div id="confSector" class="font-bold text-blue-600"></div></div>
-                </div>
-            </div>
-            <div class="flex gap-3">
-                <button onclick="closeModal('confirmModal')" class="flex-1 py-3 rounded-lg font-bold text-gray-600 bg-gray-100 hover:bg-gray-200">Ubah</button>
-                <button onclick="processSave()" class="flex-1 py-3 rounded-lg font-bold text-white bg-green-600 hover:bg-green-700 shadow-lg">Simpan</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="ticketModal" class="fixed inset-0 z-[70] flex items-center justify-center bg-black/90 hidden backdrop-blur-sm transition-opacity opacity-0">
-        <div class="bg-white w-full max-w-sm rounded-2xl p-6 text-center transform scale-95 transition-transform relative">
-            <button onclick="closeModal('ticketModal')" class="absolute top-4 right-4 text-2xl text-gray-400 hover:text-red-500">×</button>
-            <div class="text-red-600 font-bold tracking-widest text-xs mb-1 uppercase">Tiket Natal</div>
-            <h2 id="ticName" class="text-2xl font-black text-gray-800 leading-tight mb-2">Nama</h2>
-            <div class="flex justify-center gap-2 mb-4">
-                <span id="ticClass" class="px-2 py-1 bg-purple-100 text-purple-700 text-xs font-bold rounded">Kelas</span>
-                <span id="ticSector" class="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-bold rounded">Sektor</span>
-            </div>
-            <div class="bg-white border-4 border-gray-200 p-4 rounded-xl shadow-inner mb-4 inline-block">
-                <img id="ticQR" src="" class="w-48 h-48 object-contain qr-code">
-            </div>
-            <p class="text-xs text-gray-400 font-medium">Gunakan QR ini untuk Absensi & Pengambilan Hadiah</p>
-            <button onclick="closeModal('ticketModal')" class="mt-4 w-full py-3 bg-gray-100 font-bold text-gray-600 rounded-xl hover:bg-gray-200">Tutup</button>
-        </div>
-    </div>
-
-    <input type="file" id="importInput" accept=".csv" class="hidden" onchange="handleImport(this)">
-
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, push, onValue, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyBzka8Ps_nf-8zDA2tMDmqEMw6zMoy3aeM",
-            authDomain: "eventnatal2025.firebaseapp.com",
-            databaseURL: "https://eventnatal2025-default-rtdb.asia-southeast1.firebasedatabase.app/", 
-            projectId: "eventnatal2025",
-            storageBucket: "eventnatal2025.firebasestorage.app",
-            messagingSenderId: "961570070334",
-            appId: "1:961570070334:web:888638e9de275e27b2566f",
-            measurementId: "G-QX5GJPEDCF"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
-        const ADMIN_PASS = "ADMIN123";
-
-        let state = {
-            participants: [],
-            attendance: [],
-            gifts: [],
-            tab: 'register',
-            dataViewMode: 'attendance', 
-            scanner: null,
-            tempData: null,
-            searchTerm: ''
-        };
-
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        function beep(type = 'success') {
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.type = type === 'success' ? 'sine' : 'square';
-            osc.frequency.setValueAtTime(type === 'success' ? 880 : 300, audioCtx.currentTime);
-            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-            osc.connect(gain); gain.connect(audioCtx.destination);
-            osc.start(); osc.stop(audioCtx.currentTime + 0.15);
-        }
-
-        const getClock = () => {
-            const n = new Date();
-            document.getElementById('liveClock').innerText = n.toLocaleTimeString('id-ID', {hour12: false});
-            document.getElementById('liveDate').innerText = n.toLocaleDateString('id-ID', {weekday:'long', day:'numeric', month:'long'});
-        };
-        setInterval(getClock, 1000); getClock();
-
-        const fmtDate = () => new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
-        const getQR = (txt) => `https://api.qrserver.com/v1/create-qr-code/?size=500x500&margin=20&ecc=L&color=000000&bgcolor=ffffff&data=${encodeURIComponent(txt)}`;
-
-        // --- LISTENERS ---
-        onValue(ref(db, 'participants'), s => {
-            state.participants = s.val() ? Object.values(s.val()) : [];
-            updateStats();
-            if (state.tab === 'register') renderParticipantListOnly();
-        });
-        
-        onValue(ref(db, 'attendance'), s => {
-            state.attendance = s.val() ? Object.values(s.val()) : [];
-            updateStats();
-            if (state.tab === 'data' && state.dataViewMode === 'attendance') render();
-            document.getElementById('loading').style.display = 'none';
-        });
-
-        onValue(ref(db, 'gifts'), s => {
-            state.gifts = s.val() ? Object.values(s.val()) : [];
-            updateStats();
-            if (state.tab === 'data' && state.dataViewMode === 'gifts') render();
-        });
-
-        function updateStats() {
-            document.getElementById('statRegistered').innerText = state.participants.length;
-            document.getElementById('statPresent').innerText = state.attendance.length;
-            document.getElementById('statGifts').innerText = state.gifts.length;
-        }
-
-        // --- CORE LOGIC ---
-        window.preRegister = () => {
-            const name = document.getElementById('inName').value.trim();
-            const cls = document.getElementById('inClass').value;
-            const sec = document.getElementById('inSector').value;
-            if(!name || !cls || !sec) return alert("Mohon lengkapi semua data!");
-            state.tempData = { name, cls, sec };
-            document.getElementById('confName').innerText = name;
-            document.getElementById('confClass').innerText = cls;
-            document.getElementById('confSector').innerText = sec;
-            const m = document.getElementById('confirmModal');
-            m.classList.remove('hidden');
-            setTimeout(() => { m.classList.remove('opacity-0'); m.children[0].classList.replace('scale-95','scale-100'); }, 10);
-        };
-
-        window.processSave = () => {
-            if(!state.tempData) return;
-            const { name, cls, sec } = state.tempData;
-            const id = Date.now().toString();
-            const qr = `NATAL-${id.slice(-6)}`;
-            push(ref(db, 'participants'), {
-                id, name, classGrade: cls, sector: sec, qrCode: qr,
-                registeredAt: fmtDate(), timestamp: Date.now()
-            });
-            window.closeModal('confirmModal');
-            document.getElementById('inName').value = '';
-            
-            document.getElementById('ticName').innerText = name;
-            document.getElementById('ticClass').innerText = cls;
-            document.getElementById('ticSector').innerText = sec;
-            document.getElementById('ticQR').src = getQR(qr);
-            const t = document.getElementById('ticketModal');
-            t.classList.remove('hidden');
-            setTimeout(() => { t.classList.remove('opacity-0'); t.children[0].classList.replace('scale-95','scale-100'); }, 10);
-        };
-
-        // --- FITUR CARI TIKET ---
-        window.findMyTicket = () => {
-            const nameInput = document.getElementById('findName');
-            const sectorInput = document.getElementById('findSector');
-            const name = nameInput.value.trim().toLowerCase();
-            const sector = sectorInput.value;
-
-            if(!name || !sector) {
-                alert("Mohon isi Nama Lengkap dan Sektor sesuai pendaftaran!");
-                return;
-            }
-
-            const found = state.participants.find(p => 
-                p.name.trim().toLowerCase() === name && 
-                p.sector === sector
-            );
-
-            if (found) {
-                window.showTicket(found.name, found.classGrade, found.sector, found.qrCode);
-                document.getElementById('findName').value = ''; 
-                document.getElementById('findSector').value = ''; 
-            } else {
-                alert("❌ Data tidak ditemukan!\n\nPastikan:\n1. Nama sesuai ejaan saat daftar.\n2. Pilihan Sektor benar.");
-            }
-        };
-
-        window.processScannedID = (pid) => {
-            const p = state.participants.find(x => x.id === pid);
-            if(!p) return;
-            if (state.tab === 'gift') window.claimGift(p);
-            else window.doCheckIn(p);
-        };
-
-        window.doCheckIn = (p) => {
-            const exists = state.attendance.find(x => x.participantId === p.id);
-            if(exists) {
-                beep('fail');
-                showScanResult(false, `⚠️ ${p.name} Sudah Absen!`);
-            } else {
-                beep('success');
-                push(ref(db, 'attendance'), {
-                    id: Date.now().toString(), participantId: p.id, name: p.name,
-                    classGrade: p.classGrade, sector: p.sector, timestamp: fmtDate()
-                });
-                showScanResult(true, `✅ ${p.name} Hadir!`);
-            }
-        };
-
-        window.claimGift = (p) => {
-            const alreadyClaimed = state.gifts.find(x => x.participantId === p.id);
-            if(alreadyClaimed) {
-                beep('fail');
-                showScanResult(false, `⚠️ ${p.name} Sudah Ambil Hadiah!`, 'bg-yellow-500');
-            } else {
-                beep('success');
-                push(ref(db, 'gifts'), {
-                    id: Date.now().toString(), participantId: p.id, name: p.name,
-                    classGrade: p.classGrade, sector: p.sector, timestamp: fmtDate()
-                });
-                showScanResult(true, `🎁 ${p.name} Dapat Hadiah!`, 'bg-purple-600');
-            }
-        };
-
-        // --- SCANNER SYSTEM ---
-        window.initScanner = () => {
-            if(state.scanner) return;
-            const config = { fps: 10, qrbox: 450, aspectRatio: 1.0, disableFlip: false };
-            state.scanner = new Html5QrcodeScanner("reader", config, false);
-            
-            state.scanner.render((decodedText) => {
-                if(state.scanner) state.scanner.pause();
-                const p = state.participants.find(x => x.qrCode === decodedText);
-                if(p) window.processScannedID(p.id);
-                else { beep('fail'); showScanResult(false, "❌ QR Tidak Dikenal"); }
-                setTimeout(() => { if(state.scanner) state.scanner.resume(); }, 2500);
-            }, (error) => {});
-        };
-
-        window.stopScanner = () => {
-            if(state.scanner) {
-                state.scanner.clear().catch(e => console.error(e));
-                state.scanner = null;
-            }
-        };
-
-        function showScanResult(success, msg, customColor) {
-            const el = document.getElementById('scanRes');
-            if(el) {
-                el.innerHTML = msg;
-                const color = customColor ? customColor : (success ? 'bg-green-500' : 'bg-red-500');
-                el.className = `p-4 rounded-xl font-bold text-center text-white shadow-lg animate-pulse mb-4 ${color}`;
-                el.classList.remove('hidden');
-                setTimeout(() => { el.classList.add('hidden'); }, 2000);
-            }
-        }
-
-        // --- HELPERS ---
-        window.handleSearch = (el) => {
-            state.searchTerm = el.value.toLowerCase();
-            const container = document.getElementById('manual-list');
-            if(!container) return;
-            const filtered = state.participants.filter(p => p.name.toLowerCase().includes(state.searchTerm));
-            if(filtered.length === 0) {
-                container.innerHTML = '<div class="text-center text-gray-400 py-4 text-sm">Nama tidak ditemukan</div>';
-                return;
-            }
-            container.innerHTML = generateListHTML(filtered, state.tab === 'gift');
-        };
-
-        function generateListHTML(list, isGiftMode) {
-            return list.map(p => {
-                let statusBadge = '';
-                let actionBtn = '';
-                if (isGiftMode) {
-                    const claimed = state.gifts.find(g => g.participantId === p.id);
-                    if (claimed) statusBadge = `<span class="text-purple-600 font-bold text-xs bg-purple-100 px-3 py-1 rounded-lg">🎁 DIAMBIL</span>`;
-                    else actionBtn = `<button onclick="window.processScannedID('${p.id}')" class="bg-purple-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-purple-700">AMBIL</button>`;
-                } else {
-                    const present = state.attendance.find(a => a.participantId === p.id);
-                    if (present) statusBadge = `<span class="text-green-600 font-bold text-xs bg-green-50 px-3 py-1 rounded-lg">HADIR</span>`;
-                    else actionBtn = `<button onclick="window.processScannedID('${p.id}')" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-blue-700">CHECK-IN</button>`;
-                }
-                return `
-                <div class="flex items-center justify-between p-3 border-b border-gray-100 hover:bg-gray-50">
-                    <div>
-                        <div class="font-bold text-gray-800 text-sm">${p.name}</div>
-                        <div class="flex gap-2 mt-1">
-                            <span class="text-[10px] bg-gray-100 text-gray-700 px-2 py-0.5 rounded font-bold">${p.classGrade}</span>
-                            <span class="text-[10px] bg-gray-100 text-gray-700 px-2 py-0.5 rounded font-bold">${p.sector}</span>
-                        </div>
-                    </div>
-                    ${statusBadge || actionBtn}
-                </div>`;
-            }).join('');
-        }
-
-        window.switchDataView = (mode) => {
-            state.dataViewMode = mode;
-            render();
-        }
-
-        window.setTab = (t) => {
-            if((state.tab === 'scan' || state.tab === 'gift') && (t !== 'scan' && t !== 'gift')) window.stopScanner();
-            state.tab = t;
-            ['register','find','scan','gift','data'].forEach(x => {
-                const btn = document.getElementById(`tab-${x}`);
-                if(x === t) {
-                    btn.classList.remove('bg-white','text-gray-400');
-                    btn.classList.add('bg-red-600','text-white','shadow-xl','-translate-y-1');
-                } else {
-                    btn.classList.add('bg-white','text-gray-400');
-                    btn.classList.remove('bg-red-600','text-white','shadow-xl','-translate-y-1');
-                }
-            });
-            render();
-            if(t === 'scan' || t === 'gift') setTimeout(() => window.initScanner(), 100);
-        };
-
-        function renderParticipantListOnly() {
-            const container = document.getElementById('participant-list-container');
-            if (container) {
-                container.innerHTML = state.participants.slice().reverse().map(p => {
-                    const active = state.attendance.find(a => a.participantId === p.id);
-                    return `
-                    <div class="bg-white p-4 rounded-xl shadow-sm flex justify-between items-center border-l-4 ${active ? 'border-green-500 bg-green-50' : 'border-gray-200'}">
-                        <div>
-                            <div class="font-bold text-gray-800">${p.name}</div>
-                            <div class="flex gap-2 mt-1">
-                                <span class="text-[10px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded font-bold">${p.classGrade}</span>
-                                <span class="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded font-bold">${p.sector}</span>
-                            </div>
-                        </div>
-                        <button onclick="window.showTicket('${p.name}', '${p.classGrade}', '${p.sector}', '${p.qrCode}')" class="text-xs font-bold bg-gray-100 px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-200">TIKET</button>
-                    </div>`;
-                }).join('');
-            }
-        }
-
-        window.render = () => {
-            const root = document.getElementById('content-area');
-            
-            if (state.tab === 'register') {
-                if (!document.getElementById('registration-form')) {
-                    root.innerHTML = `
-                        <div id="registration-form" class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-6">
-                            <h3 class="font-bold text-gray-700 mb-4">Input Peserta Baru</h3>
-                            <input id="inName" type="text" placeholder="Nama Lengkap..." class="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-xl font-bold focus:border-red-500 outline-none mb-3">
-                            <div class="flex gap-3 mb-4">
-                                <select id="inClass" class="flex-1 p-3 bg-gray-50 border-2 border-gray-100 rounded-xl font-bold text-gray-600 outline-none">
-                                    <option value="" disabled selected>Pilih Kelas</option>
-                                    <option value="Daud">Daud</option><option value="Daniel">Daniel</option>
-                                    <option value="Paulus">Paulus</option><option value="Ester">Ester</option>
-                                    <option value="GSM">GSM</option><option value="Orang Tua">Orang Tua</option><option value="Tamu Undangan">Tamu Undangan</option>
-                                </select>
-                                <select id="inSector" class="flex-1 p-3 bg-gray-50 border-2 border-gray-100 rounded-xl font-bold text-gray-600 outline-none">
-                                    <option value="" disabled selected>Sektor</option>
-                                    ${[...Array(12)].map((_,i)=>`<option value="Sektor ${i+1}">Sektor ${i+1}</option>`).join('')}
-                                </select>
-                            </div>
-                            <button onclick="preRegister()" class="w-full py-4 bg-red-600 text-white font-extrabold rounded-xl shadow-lg hover:bg-red-700 active:scale-95 transition-transform">LANJUT KONFIRMASI</button>
-                        </div>
-                        <div id="participant-list-container" class="space-y-3"></div>
-                    `;
-                }
-                renderParticipantListOnly();
-            } else if (state.tab === 'find') {
-                root.innerHTML = `
-                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-6 text-center">
-                        <div class="text-4xl mb-2">🎫</div>
-                        <h3 class="font-bold text-gray-700 mb-2">Cari Tiket Saya</h3>
-                        <p class="text-xs text-gray-400 mb-6">Masukkan nama persis sesuai pendaftaran</p>
-                        
-                        <input id="findName" type="text" placeholder="Nama Lengkap Anda..." class="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-xl font-bold focus:border-blue-500 outline-none mb-3">
-                        
-                        <div class="relative mb-6">
-                            <select id="findSector" class="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-xl font-bold text-gray-600 focus:outline-none focus:border-blue-500 appearance-none">
-                                <option value="" disabled selected>Pilih Sektor Anda</option>
-                                ${[...Array(12)].map((_,i)=>`<option value="Sektor ${i+1}">Sektor ${i+1}</option>`).join('')}
-                            </select>
-                            <div class="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-gray-500">▼</div>
-                        </div>
-
-                        <button onclick="findMyTicket()" class="w-full py-4 bg-blue-600 text-white font-extrabold rounded-xl shadow-lg hover:bg-blue-700 active:scale-95 transition-transform">CARI TIKET</button>
-                    </div>
-                `;
-            } else if (state.tab === 'scan' || state.tab === 'gift') {
-                const isGift = state.tab === 'gift';
-                const label = isGift ? 'Scanner Hadiah' : 'Scanner Absensi';
-                const hint = isGift ? 'Scan QR untuk ambil hadiah' : 'Scan QR untuk kehadiran';
-                const color = isGift ? 'bg-purple-500' : 'bg-green-500';
-
-                root.innerHTML = `
-                    <div class="bg-white p-4 rounded-2xl shadow-sm text-center mb-6">
-                        <div class="flex items-center justify-center gap-2 mb-2">
-                            <span class="text-2xl">${isGift ? '🎁' : '📷'}</span>
-                            <h3 class="font-bold text-gray-700">${label}</h3>
-                        </div>
-                        <div id="scanRes" class="hidden"></div>
-                        <div id="reader" class="mb-4"></div>
-                        <p class="text-[10px] text-gray-400">${hint}</p>
-                    </div>
-                    <div class="bg-white p-4 rounded-2xl shadow-sm">
-                        <div class="text-sm font-bold text-gray-400 mb-2 uppercase">Manual ${isGift ? 'Ambil Hadiah' : 'Check-In'}</div>
-                        <input oninput="window.handleSearch(this)" type="text" placeholder="Cari nama..." class="w-full p-3 bg-gray-50 border rounded-xl mb-2 text-sm focus:outline-none focus:border-blue-500 transition-colors">
-                        <div id="manual-list" class="max-h-48 overflow-y-auto"></div>
-                    </div>
-                `;
-            } else if (state.tab === 'data') {
-                const isGiftView = state.dataViewMode === 'gifts';
-                const dataToShow = isGiftView ? state.gifts : state.attendance;
-                const headerText = isGiftView ? 'Laporan Pengambilan Hadiah' : 'Laporan Kehadiran Jemaat';
-                
-                const btnAttendanceClass = !isGiftView 
-                    ? 'bg-blue-600 text-white shadow-lg transform -translate-y-1' 
-                    : 'bg-white text-gray-500 hover:bg-gray-100';
-                
-                const btnGiftClass = isGiftView 
-                    ? 'bg-purple-600 text-white shadow-lg transform -translate-y-1' 
-                    : 'bg-white text-gray-500 hover:bg-gray-100';
-
-                root.innerHTML = `
-                    <div class="bg-white p-4 rounded-2xl shadow-sm mb-6">
-                        <div class="flex gap-2 mb-4 p-1 bg-gray-100 rounded-xl">
-                            <button onclick="switchDataView('attendance')" class="flex-1 py-3 text-xs font-bold rounded-lg transition-all ${btnAttendanceClass}">
-                                📋 Data Kehadiran
-                            </button>
-                            <button onclick="switchDataView('gifts')" class="flex-1 py-3 text-xs font-bold rounded-lg transition-all ${btnGiftClass}">
-                                🎁 Data Hadiah
-                            </button>
-                        </div>
-
-                        <div class="grid grid-cols-1 gap-2 mb-4">
-                            <button onclick="exportData('p')" class="w-full py-3 bg-green-50 text-green-700 border border-green-200 rounded-lg text-[10px] font-bold hover:bg-green-100 text-center">
-                                📥 Download Data Seluruh Jemaat (Master)
-                            </button>
-                            <div class="grid grid-cols-2 gap-2">
-                                <button onclick="exportData('a')" class="py-3 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg text-[10px] font-bold hover:bg-blue-100 text-center">
-                                    📥 Download Absensi
-                                </button>
-                                <button onclick="exportData('g')" class="py-3 bg-purple-50 text-purple-700 border border-purple-200 rounded-lg text-[10px] font-bold hover:bg-purple-100 text-center">
-                                    📥 Download Hadiah
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <button onclick="triggerImport()" class="w-full py-3 bg-gray-50 text-gray-600 rounded-xl text-xs font-bold border border-gray-200 border-dashed hover:bg-gray-50">
-                            📂 Import Data Peserta (CSV)
-                        </button>
-                    </div>
-
-                    <div class="flex justify-between items-center px-2 mb-2">
-                        <h3 class="font-bold text-gray-700 text-sm">${headerText}</h3>
-                        <span class="text-xs font-bold bg-gray-200 text-gray-600 px-2 py-1 rounded-full">${dataToShow.length} Data</span>
-                    </div>
-
-                    <div class="space-y-2 pb-8">
-                        ${dataToShow.length === 0 ? `
-                            <div class="text-center py-10 text-gray-400 bg-white rounded-2xl border-2 border-dashed border-gray-100">
-                                <div class="text-4xl mb-2">📭</div>
-                                <div class="text-sm">Belum ada data</div>
-                            </div>
-                        ` : ''}
-                        
-                        ${dataToShow.slice().reverse().map(item => `
-                            <div class="bg-white p-3 rounded-xl shadow-sm flex items-center justify-between border-l-4 ${isGiftView ? 'border-purple-500' : 'border-blue-500'}">
-                                <div>
-                                    <div class="font-bold text-gray-800">${item.name}</div>
-                                    <div class="flex gap-2 text-[10px] text-gray-500 mt-1">
-                                        <span class="bg-gray-100 px-2 py-0.5 rounded">${item.classGrade}</span>
-                                        <span class="bg-gray-100 px-2 py-0.5 rounded">${item.sector}</span>
-                                    </div>
-                                    <div class="text-[10px] text-gray-400 mt-1 font-mono flex items-center gap-1">
-                                        🕒 ${item.timestamp}
-                                    </div>
-                                </div>
-                                <span class="${isGiftView ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'} px-3 py-1 rounded-lg text-[10px] font-bold">
-                                    ${isGiftView ? 'SUDAH DIAMBIL' : 'HADIR'}
-                                </span>
-                            </div>
-                        `).join('')}
-                    </div>
-                    
-                    <div class="mt-8 text-center opacity-50 hover:opacity-100 transition-opacity">
-                        <button onclick="resetData()" class="text-[10px] text-red-400 font-bold border border-red-200 px-4 py-2 rounded-full hover:bg-red-50">⚠️ Admin Reset System</button>
-                    </div>
-                `;
-            }
-        };
-
-        window.showTicket = (n, c, s, q) => {
-            document.getElementById('ticName').innerText = n;
-            document.getElementById('ticClass').innerText = c;
-            document.getElementById('ticSector').innerText = s;
-            document.getElementById('ticQR').src = getQR(q);
-            const t = document.getElementById('ticketModal');
-            t.classList.remove('hidden');
-            setTimeout(() => t.children[0].classList.replace('scale-95','scale-100'), 10);
-        };
-
-        // --- FIXED EXPORT FUNCTION ---
-        window.exportData = (type) => {
-            let csv = "data:text/csv;charset=utf-8,";
-            let filename = "";
-            let data = [];
-
-            if (type === 'p') {
-                // Export Jemaat (Master)
-                csv += "Nama,Kelas,Sektor,QR_Code,Waktu_Daftar\n";
-                data = state.participants;
-                filename = "Data_Jemaat_Natal_2025.csv";
-                data.forEach(x => {
-                    csv += `"${x.name}","${x.classGrade}","${x.sector}","${x.qrCode}","${x.registeredAt}"\n`;
-                });
-            } else if (type === 'a') {
-                // Export Absensi (Kehadiran)
-                csv += "Nama,Kelas,Sektor,Waktu_Hadir\n";
-                data = state.attendance;
-                filename = "Laporan_Absensi_Natal_2025.csv";
-                data.forEach(x => {
-                    csv += `"${x.name}","${x.classGrade}","${x.sector}","${x.timestamp}"\n`;
-                });
-            } else if (type === 'g') {
-                // Export Hadiah
-                csv += "Nama,Kelas,Sektor,Waktu_Ambil_Hadiah\n";
-                data = state.gifts;
-                filename = "Laporan_Hadiah_Natal_2025.csv";
-                data.forEach(x => {
-                    csv += `"${x.name}","${x.classGrade}","${x.sector}","${x.timestamp}"\n`;
-                });
-            }
-
-            const link = document.createElement("a");
-            link.href = encodeURI(csv);
-            link.download = filename;
-            link.click();
-        };
-
-        window.importData = (input) => { 
-             const f = input.files[0]; if(!f) return;
-             const r = new FileReader();
-             r.onload = e => {
-                 const lines = e.target.result.split('\n');
-                 let c = 0;
-                 lines.forEach((l,i) => {
-                     if(i===0) return;
-                     const [n, cl, sc] = l.split(',').map(x => x?.replace(/"/g,'').trim());
-                     if(n) {
-                         const id = (Date.now()+i).toString();
-                         push(ref(db, 'participants'), {
-                             id, name: n, classGrade: cl||'Daud', sector: sc||'Sektor 1',
-                             qrCode: `NATAL-${id.slice(-6)}`, registeredAt: fmtDate(), timestamp: Date.now()
-                         });
-                         c++;
-                     }
-                 });
-                 alert(`Import ${c} data sukses!`); input.value = '';
-             };
-             r.readAsText(f);
-        };
-        window.triggerImport = () => document.getElementById('importInput').click();
-
-        window.resetData = () => {
-            if(prompt("Password Admin:") === ADMIN_PASS && confirm("Hapus SEMUA data?")) {
-                set(ref(db, 'participants'), null);
-                set(ref(db, 'attendance'), null);
-                set(ref(db, 'gifts'), null);
-                alert("Database Reset.");
-            }
-        };
-
-        window.closeModal = (id) => {
-            const m = document.getElementById(id);
-            m.classList.add('opacity-0');
-            m.children[0].classList.replace('scale-100','scale-95');
-            setTimeout(() => m.classList.add('hidden'), 300);
-        };
-
-        // Init
-        setTab('register');
-    </script></body></html>
-
-
