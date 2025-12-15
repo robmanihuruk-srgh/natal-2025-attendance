@@ -116,23 +116,39 @@
 
     <div id="ticketModal" class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/90 hidden backdrop-blur-sm transition-opacity opacity-0">
         <div class="bg-white w-full max-w-sm rounded-2xl p-6 text-center transform scale-95 transition-transform relative border-t-8 border-red-600">
-            <button onclick="closeModal('ticketModal')" class="absolute top-4 right-4 text-2xl text-gray-400 hover:text-red-500">×</button>
-            <div class="text-red-600 font-bold tracking-widest text-xs mb-1 uppercase">Tiket Natal 2025</div>
-            <h2 id="ticName" class="text-2xl font-black text-gray-800 leading-tight mb-2">Nama</h2>
-            <div class="flex justify-center gap-2 mb-4">
-                <span id="ticClass" class="px-2 py-1 bg-purple-100 text-purple-700 text-xs font-bold rounded">Kelas</span>
-                <span id="ticSector" class="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-bold rounded">Sektor</span>
-            </div>
-            <div class="bg-white border-4 border-gray-200 p-4 rounded-xl shadow-inner mb-4 inline-block">
-                <img id="ticQR" src="" class="w-48 h-48 object-contain qr-code">
-            </div>
-            <p class="text-xs text-gray-400 font-medium mb-4">Gunakan QR ini untuk Absensi & Pengambilan Hadiah</p>
+            <button onclick="closeModal('ticketModal')" class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-gray-100 rounded-full transition-colors">
+                ✕
+            </button>
             
-             <a id="btnDownloadTicket" href="#" download="Tiket_Natal.png" class="block w-full py-3 bg-blue-600 text-white font-bold rounded-xl shadow-lg hover:bg-blue-700 mb-2 flex items-center justify-center gap-2">
-                💾 Simpan Tiket
-            </a>
-
-            <button onclick="closeModal('ticketModal')" class="mt-2 w-full py-3 bg-gray-100 font-bold text-gray-600 rounded-xl hover:bg-gray-200">Tutup</button>
+            <div class="mb-4">
+                <div class="text-red-600 font-bold tracking-widest text-xs mb-1 uppercase">Tiket Natal 2025</div>
+                <h2 id="ticName" class="text-2xl font-black text-gray-800 leading-tight mb-2">Nama Peserta</h2>
+                <div class="flex justify-center gap-2 mb-4">
+                    <span id="ticClass" class="px-3 py-1 bg-purple-100 text-purple-700 text-xs font-bold rounded-full">Kelas</span>
+                    <span id="ticSector" class="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-bold rounded-full">Sektor</span>
+                </div>
+            </div>
+            
+            <div class="bg-white border-4 border-gray-200 p-4 rounded-xl shadow-inner mb-6 inline-block mx-auto">
+                <img id="ticQR" src="" class="w-48 h-48 object-contain qr-code" alt="QR Code Tiket">
+            </div>
+            
+            <div class="space-y-3">
+                <a id="btnDownloadTicket" href="#" download="Tiket_Natal_GKPS.png" 
+                   class="block w-full py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-bold rounded-xl shadow-lg hover:from-blue-700 hover:to-blue-800 transition-all flex items-center justify-center gap-2">
+                    📥 Simpan Tiket
+                </a>
+                
+                <button onclick="printTicket()" 
+                        class="block w-full py-3 bg-gray-100 font-bold text-gray-600 rounded-xl hover:bg-gray-200 transition-colors flex items-center justify-center gap-2">
+                    🖨️ Cetak Tiket
+                </button>
+                
+                <button onclick="closeModal('ticketModal')" 
+                        class="block w-full py-3 text-sm font-medium text-gray-400 hover:text-gray-600 transition-colors">
+                    Tutup
+                </button>
+            </div>
         </div>
     </div>
 
@@ -189,7 +205,8 @@
         setInterval(getClock, 1000); getClock();
 
         const fmtDate = () => new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
-        const getQR = (txt) => `https://api.qrserver.com/v1/create-qr-code/?size=500x500&margin=20&ecc=L&color=000000&bgcolor=ffffff&data=${encodeURIComponent(txt)}`;
+        // QR Code Generator (Resolusi Tinggi untuk Download)
+        const getQR = (txt) => `https://api.qrserver.com/v1/create-qr-code/?size=600x600&margin=20&ecc=L&color=000000&bgcolor=ffffff&format=png&data=${encodeURIComponent(txt)}`;
 
         // --- LISTENERS ---
         onValue(ref(db, 'participants'), s => {
@@ -243,19 +260,20 @@
             });
             window.closeModal('confirmModal');
             document.getElementById('inName').value = '';
+            
             window.showTicket(name, cls, sec, qr);
         };
 
-        // --- FIX FUNGSI CARI TIKET ---
+        // --- FUNGSI CARI TIKET YANG DIPERBAIKI ---
         window.findMyTicket = () => {
-            // Ambil elemen
             const nameInput = document.getElementById('findName');
             const sectorInput = document.getElementById('findSector');
-            const btn = document.getElementById('btnCariTiket');
-
-            // Validasi Input
-            if(!nameInput || !sectorInput) return;
             
+            if(!nameInput || !sectorInput) {
+                alert("Form pencarian tidak tersedia!");
+                return;
+            }
+
             const name = nameInput.value.trim().toLowerCase();
             const sector = sectorInput.value;
 
@@ -264,27 +282,42 @@
                 return;
             }
 
-            // Ubah tombol jadi loading
-            if(btn) btn.innerText = "🔍 Mencari...";
-
-            // Logika Pencarian (Nama bisa mengandung input, Sektor harus sama persis)
+            // Pencarian yang lebih fleksibel
             const found = state.participants.find(p => {
-                const pName = (p.name || "").toLowerCase().trim();
-                const pSector = (p.sector || "").trim();
+                const pName = p.name?.trim().toLowerCase() || "";
+                const pSector = p.sector || "";
+                
+                // Cocokkan nama (partial match) DAN sektor (exact match)
                 return pName.includes(name) && pSector === sector;
             });
 
-            // Kembalikan tombol
-            if(btn) btn.innerText = "CARI TIKET";
-
             if (found) {
-                // Tampilkan Tiket
-                window.showTicket(found.name, found.classGrade, found.sector, found.qrCode);
-                // Opsional: Reset form
-                // nameInput.value = '';
-                // sectorInput.value = '';
+                // Data fallback untuk menghindari error
+                const safeName = found.name || "Peserta";
+                const safeClass = found.classGrade || "-";
+                const safeSector = found.sector || "-";
+                const safeQR = found.qrCode || `NATAL-${found.id?.slice(-6) || "000000"}`;
+
+                window.showTicket(safeName, safeClass, safeSector, safeQR);
             } else {
-                alert("❌ Data tidak ditemukan!\n\nPastikan:\n1. Nama yang diketik sesuai.\n2. Pilihan Sektor benar.");
+                // Pesan error yang lebih informatif
+                const participantsInSector = state.participants.filter(p => p.sector === sector);
+                
+                let errorMsg = "❌ Data tidak ditemukan!\n\n";
+                errorMsg += `Nama: ${nameInput.value.trim()}\n`;
+                errorMsg += `Sektor: ${sector}\n\n`;
+                
+                if (participantsInSector.length === 0) {
+                    errorMsg += "Tidak ada peserta terdaftar di sektor ini.";
+                } else {
+                    errorMsg += "Tips:\n";
+                    errorMsg += "- Cek ejaan nama\n";
+                    errorMsg += "- Gunakan nama lengkap\n";
+                    errorMsg += "- Atau coba nama panggilan\n\n";
+                    errorMsg += `Total ${participantsInSector.length} peserta di sektor ${sector}`;
+                }
+                
+                alert(errorMsg);
             }
         };
 
@@ -330,6 +363,7 @@
             if(state.scanner) return;
             const config = { fps: 10, qrbox: 450, aspectRatio: 1.0, disableFlip: false };
             state.scanner = new Html5QrcodeScanner("reader", config, false);
+            
             state.scanner.render((decodedText) => {
                 if(state.scanner) state.scanner.pause();
                 const p = state.participants.find(x => x.qrCode === decodedText);
@@ -340,7 +374,10 @@
         };
 
         window.stopScanner = () => {
-            if(state.scanner) { state.scanner.clear().catch(console.error); state.scanner = null; }
+            if(state.scanner) {
+                state.scanner.clear().catch(e => console.error(e));
+                state.scanner = null;
+            }
         };
 
         function showScanResult(success, msg, customColor) {
@@ -464,23 +501,65 @@
                 }
                 renderParticipantListOnly();
             } else if (state.tab === 'find') {
+                // FORM CARI TIKET YANG DIOPTIMALKAN
                 root.innerHTML = `
-                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-6 text-center">
-                        <div class="text-4xl mb-2">🎫</div>
-                        <h3 class="font-bold text-gray-700 mb-2">Cari Tiket Saya</h3>
-                        <p class="text-xs text-gray-400 mb-6">Masukkan nama persis sesuai pendaftaran</p>
-                        
-                        <input id="findName" type="text" placeholder="Nama Lengkap Anda..." class="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-xl font-bold focus:border-blue-500 outline-none mb-3">
-                        
-                        <div class="relative mb-6">
-                            <select id="findSector" class="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-xl font-bold text-gray-600 focus:outline-none focus:border-blue-500 appearance-none">
-                                <option value="" disabled selected>Pilih Sektor Anda</option>
-                                ${[...Array(12)].map((_,i)=>`<option value="Sektor ${i+1}">Sektor ${i+1}</option>`).join('')}
-                            </select>
-                            <div class="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-gray-500">▼</div>
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-6">
+                        <div class="flex items-center gap-3 mb-6">
+                            <div class="bg-blue-100 p-3 rounded-xl">
+                                <span class="text-2xl">🎫</span>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-gray-700">Cari Tiket Anda</h3>
+                                <p class="text-xs text-gray-400">Masukkan data sesuai pendaftaran</p>
+                            </div>
                         </div>
-
-                        <button id="btnCariTiket" onclick="findMyTicket()" class="w-full py-4 bg-blue-600 text-white font-extrabold rounded-xl shadow-lg hover:bg-blue-700 active:scale-95 transition-transform">CARI TIKET</button>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-bold text-gray-500 mb-1">Nama Lengkap</label>
+                                <input id="findName" type="text" 
+                                       placeholder="Contoh: Budi Santoso" 
+                                       class="w-full p-4 bg-gray-50 border-2 border-gray-200 rounded-xl font-bold focus:border-blue-500 outline-none transition-colors">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-xs font-bold text-gray-500 mb-1">Sektor</label>
+                                <div class="relative">
+                                    <select id="findSector" 
+                                            class="w-full p-4 bg-gray-50 border-2 border-gray-200 rounded-xl font-bold text-gray-700 focus:outline-none focus:border-blue-500 appearance-none">
+                                        <option value="" disabled selected>Pilih Sektor Anda</option>
+                                        ${[...Array(12)].map((_,i)=>`<option value="Sektor ${i+1}">Sektor ${i+1}</option>`).join('')}
+                                    </select>
+                                    <div class="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-gray-500">▼</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <button onclick="findMyTicket()" 
+                                class="w-full mt-8 py-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-extrabold rounded-xl shadow-lg hover:from-blue-700 hover:to-blue-800 active:scale-95 transition-all duration-200">
+                            🔍 CARI TIKET SAYA
+                        </button>
+                        
+                        <div class="mt-6 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                            <p class="text-xs text-yellow-700 text-center">
+                                <strong>Tips:</strong> Gunakan nama lengkap seperti saat mendaftar
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <!-- INFO STATISTIK -->
+                    <div class="bg-white p-4 rounded-2xl shadow-sm">
+                        <div class="text-xs font-bold text-gray-400 mb-2 uppercase">Informasi</div>
+                        <div class="grid grid-cols-2 gap-3 text-center">
+                            <div class="p-3 bg-gray-50 rounded-lg">
+                                <div class="text-2xl font-bold text-gray-700">${state.participants.length}</div>
+                                <div class="text-[10px] text-gray-500">Total Peserta</div>
+                            </div>
+                            <div class="p-3 bg-green-50 rounded-lg">
+                                <div class="text-2xl font-bold text-green-600">${state.attendance.length}</div>
+                                <div class="text-[10px] text-green-500">Sudah Hadir</div>
+                            </div>
+                        </div>
                     </div>
                 `;
             } else if (state.tab === 'scan' || state.tab === 'gift') {
@@ -588,15 +667,72 @@
         };
 
         window.showTicket = (n, c, s, q) => {
-            document.getElementById('ticName').innerText = n;
-            document.getElementById('ticClass').innerText = c;
-            document.getElementById('ticSector').innerText = s;
-            document.getElementById('ticQR').src = getQR(q);
-            document.getElementById('btnDownloadTicket').href = getQR(q); 
+            // Validasi input
+            if (!n || !q) {
+                alert("Data tiket tidak valid!");
+                return;
+            }
             
+            // Update modal content
+            document.getElementById('ticName').innerText = n || "Peserta";
+            document.getElementById('ticClass').innerText = c || "-";
+            document.getElementById('ticSector').innerText = s || "-";
+            
+            const qrUrl = getQR(q);
+            document.getElementById('ticQR').src = qrUrl;
+            document.getElementById('btnDownloadTicket').href = qrUrl;
+            
+            // Show modal with animation
             const t = document.getElementById('ticketModal');
             t.classList.remove('hidden');
-            setTimeout(() => t.children[0].classList.replace('scale-95','scale-100'), 10);
+            setTimeout(() => {
+                t.style.opacity = '1';
+                t.children[0].classList.replace('scale-95', 'scale-100');
+            }, 10);
+        };
+
+        // FUNGSI PRINT TIKET
+        window.printTicket = () => {
+            const modalContent = document.querySelector('#ticketModal > div').cloneNode(true);
+            modalContent.style.transform = 'scale(1)';
+            modalContent.classList.remove('relative');
+            
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <html>
+                    <head>
+                        <title>Tiket Natal 2025 - GKPS Tangerang</title>
+                        <style>
+                            body { 
+                                font-family: Arial, sans-serif; 
+                                margin: 0; 
+                                padding: 20px; 
+                                text-align: center;
+                            }
+                            .ticket { 
+                                max-width: 400px; 
+                                margin: 0 auto; 
+                                border: 2px solid #dc2626; 
+                                border-radius: 12px; 
+                                padding: 20px;
+                            }
+                            h1 { color: #dc2626; margin: 10px 0; }
+                            .qr-code { width: 250px; height: 250px; margin: 15px auto; }
+                            @media print { 
+                                body { padding: 0; }
+                                button { display: none; }
+                            }
+                        </style>
+                    </head>
+                    <body>
+                        ${modalContent.outerHTML}
+                        <script>
+                            window.onload = () => window.print();
+                        <\/script>
+                    </body>
+                </html>
+            `);
+            printWindow.document.close();
         };
 
         window.exportData = (type) => {
@@ -672,4 +808,6 @@
 
         // Init
         setTab('register');
-    </script></body></html>
+    </script>
+</body>
+</html>
