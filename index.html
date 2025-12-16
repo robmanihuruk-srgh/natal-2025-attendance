@@ -99,7 +99,7 @@
                 </div>
                 <div class="bg-yellow-500/30 backdrop-blur-md rounded-xl p-3 min-w-[90px] border border-white/10">
                     <div class="text-2xl font-bold text-yellow-300" id="statGifts">0</div>
-                    <div class="text-[10px] uppercase font-bold text-red-100">Hadiah</div>
+                    <div class="text-[9px] uppercase font-bold text-red-100">Hadiah</div>
                 </div>
             </div>
         </header>
@@ -430,22 +430,14 @@
                 let statusBadge = '';
                 let actionBtn = '';
                 const claimedGift = state.gifts.find(g => g.participantId === p.id);
-                const present = state.attendance.find(a => a.participantId === p.id);
                 
                 if (isGiftMode) {
-                    if (claimedGift) {
-                        statusBadge = `<span class="text-red-600 font-bold text-xs bg-red-50 border border-red-200 px-3 py-1 rounded-lg">DIAMBIL</span>`;
-                    } else {
-                        // TOMBOL AMBIL DILOCK - hanya tersedia melalui scanner
-                        statusBadge = `<span class="text-gray-400 font-bold text-xs bg-gray-100 border border-gray-200 px-3 py-1 rounded-lg">SCAN QR UNTUK AMBIL</span>`;
-                    }
+                    if (claimedGift) statusBadge = `<span class="text-red-600 font-bold text-xs bg-red-50 border border-red-200 px-3 py-1 rounded-lg">DIAMBIL</span>`;
+                    else actionBtn = `<button onclick="window.processScannedID('${p.id}')" class="bg-red-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-red-700 active:scale-95 transition-transform">Ambil</button>`;
                 } else {
-                    if (present) {
-                        statusBadge = `<span class="text-green-600 font-bold text-xs bg-green-50 px-3 py-1 rounded-lg">HADIR</span>`;
-                    } else {
-                        // TOMBOL CHECK-IN DILOCK - hanya tersedia melalui scanner
-                        statusBadge = `<span class="text-gray-400 font-bold text-xs bg-gray-100 border border-gray-200 px-3 py-1 rounded-lg">SCAN QR UNTUK CHECK-IN</span>`;
-                    }
+                    const present = state.attendance.find(a => a.participantId === p.id);
+                    if (present) statusBadge = `<span class="text-green-600 font-bold text-xs bg-green-50 px-3 py-1 rounded-lg">HADIR</span>`;
+                    else actionBtn = `<button onclick="window.processScannedID('${p.id}')" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-blue-700 active:scale-95 transition-transform">CHECK-IN</button>`;
                 }
                 return `
                 <div class="flex items-center justify-between p-3 border-b border-gray-100 hover:bg-gray-50">
@@ -457,7 +449,7 @@
                             ${claimedGift ? '<span class="text-[10px] bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded font-bold">🎁 Ambil</span>' : ''}
                         </div>
                     </div>
-                    ${statusBadge}
+                    ${statusBadge || actionBtn}
                 </div>`;
             }).join('');
         }
@@ -636,11 +628,8 @@
                         <p class="text-[10px] text-gray-400">${hint}</p>
                     </div>
                     <div class="bg-white p-4 rounded-2xl shadow-sm">
-                        <div class="text-sm font-bold text-gray-400 mb-2 uppercase">${isGift ? 'Daftar Peserta' : 'Daftar Peserta'}</div>
+                        <div class="text-sm font-bold text-gray-400 mb-2 uppercase">Manual ${isGift ? 'Ambil Hadiah' : 'Check-In'}</div>
                         <input oninput="window.handleSearch(this)" type="text" placeholder="Cari nama..." class="w-full p-3 bg-gray-50 border rounded-xl mb-2 text-sm focus:outline-none focus:border-blue-500 transition-colors">
-                        <div class="text-xs text-gray-500 mb-3 p-2 bg-blue-50 rounded-lg text-center">
-                            ⚠️ Manual ${isGift ? 'Ambil Hadiah' : 'Check-In'} terkunci. Hanya tersedia melalui scanner QR code.
-                        </div>
                         <div id="manual-list" class="max-h-48 overflow-y-auto"></div>
                     </div>
                 `;
