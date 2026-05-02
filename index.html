@@ -186,14 +186,18 @@
                     <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">Nama Lengkap</div>
                     <div id="confName" class="font-bold text-lg text-slate-800 leading-tight"></div>
                 </div>
-                <div class="flex gap-4 pt-2 border-t border-slate-200 border-dashed">
-                    <div class="flex-1">
-                        <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">Kelas</div>
-                        <div id="confClass" class="font-bold text-indigo-600 bg-indigo-50 inline-block px-3 py-1 rounded-lg text-sm"></div>
+                <div class="grid grid-cols-3 gap-2 pt-2 border-t border-slate-200 border-dashed">
+                    <div>
+                        <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">Kategori</div>
+                        <div id="confCategory" class="font-bold text-amber-600 bg-amber-50 inline-block px-2 py-1 rounded-lg text-xs truncate w-full"></div>
                     </div>
-                    <div class="flex-1">
+                    <div>
+                        <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">Kelas</div>
+                        <div id="confClass" class="font-bold text-indigo-600 bg-indigo-50 inline-block px-2 py-1 rounded-lg text-xs truncate w-full"></div>
+                    </div>
+                    <div>
                         <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">Sektor</div>
-                        <div id="confSector" class="font-bold text-sky-600 bg-sky-50 inline-block px-3 py-1 rounded-lg text-sm"></div>
+                        <div id="confSector" class="font-bold text-sky-600 bg-sky-50 inline-block px-2 py-1 rounded-lg text-xs truncate w-full"></div>
                     </div>
                 </div>
             </div>
@@ -233,7 +237,8 @@
                 <!-- Info Peserta -->
                 <div class="p-6 text-center bg-white relative pb-3">
                     <h2 id="ticName" class="text-2xl font-bold text-slate-800 leading-tight mb-3">Nama Peserta</h2>
-                    <div class="flex justify-center gap-2 mb-6">
+                    <div class="flex justify-center flex-wrap gap-2 mb-6">
+                        <span id="ticCategory" class="px-4 py-1.5 bg-amber-50 text-amber-700 text-xs font-bold rounded-full border border-amber-100">Kategori</span>
                         <span id="ticClass" class="px-4 py-1.5 bg-indigo-50 text-indigo-700 text-xs font-bold rounded-full border border-indigo-100">Kelas</span>
                         <span id="ticSector" class="px-4 py-1.5 bg-sky-50 text-sky-700 text-xs font-bold rounded-full border border-sky-100">Sektor</span>
                     </div>
@@ -292,7 +297,8 @@
         let state = {
             participants: [], attendance: [], gifts: [],
             tab: 'register', dataViewMode: 'attendance', 
-            scanner: null, tempData: null, searchTerm: ''
+            scanner: null, tempData: null, searchTerm: '',
+            classFilter: 'Semua' // State baru untuk filter kelas
         };
 
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -348,13 +354,19 @@
         // --- CORE LOGIC ---
         window.preRegister = () => {
             const name = document.getElementById('inName').value.trim();
+            const cat = document.getElementById('inCategory').value;
             const cls = document.getElementById('inClass').value;
             const sec = document.getElementById('inSector').value;
-            if(!name || !cls || !sec) { alert("Mohon lengkapi Nama, Kelas, dan Sektor!"); return; }
-            state.tempData = { name, cls, sec };
+            
+            if(!name || !cat || !cls || !sec) { alert("Mohon lengkapi Nama, Kategori, Kelas, dan Sektor!"); return; }
+            
+            state.tempData = { name, cat, cls, sec };
+            
             document.getElementById('confName').innerText = name;
+            document.getElementById('confCategory').innerText = cat;
             document.getElementById('confClass').innerText = cls;
             document.getElementById('confSector').innerText = sec;
+            
             const m = document.getElementById('confirmModal');
             m.classList.remove('hidden');
             setTimeout(() => { m.classList.remove('opacity-0'); m.children[0].classList.replace('scale-95','scale-100'); }, 10);
@@ -362,16 +374,19 @@
 
         window.processSave = () => {
             if(!state.tempData) return;
-            const { name, cls, sec } = state.tempData;
+            const { name, cat, cls, sec } = state.tempData;
             const id = Date.now().toString();
             const qr = `NATAL2026-${id.slice(-6)}`;
+            
             push(ref(db, 'participants'), {
-                id, name, classGrade: cls, sector: sec, qrCode: qr,
+                id, name, category: cat, classGrade: cls, sector: sec, qrCode: qr,
                 registeredAt: fmtDate(), timestamp: Date.now()
             });
+            
             window.closeModal('confirmModal');
             document.getElementById('inName').value = '';
-            window.showTicket(name, cls, sec, qr);
+            
+            window.showTicket(name, cat, cls, sec, qr);
         };
 
         window.findMyTicket = () => {
@@ -389,7 +404,7 @@
             });
 
             if (found) {
-                window.showTicket(found.name || "Peserta", found.classGrade || "-", found.sector || "-", found.qrCode || `NATAL2026-${found.id?.slice(-6)}`);
+                window.showTicket(found.name || "Peserta", found.category || "-", found.classGrade || "-", found.sector || "-", found.qrCode || `NATAL2026-${found.id?.slice(-6)}`);
             } else {
                 alert("❌ Data tidak ditemukan!\nTips: Cek ejaan nama atau pastikan Anda sudah terdaftar di sektor tersebut.");
             }
@@ -417,7 +432,7 @@
                 const ts = fmtDate();
                 push(ref(db, 'attendance'), {
                     id: Date.now().toString(), participantId: p.id, name: p.name,
-                    classGrade: p.classGrade, sector: p.sector, timestamp: ts
+                    category: p.category || '', classGrade: p.classGrade, sector: p.sector, timestamp: ts
                 });
                 window.showScanResult(true, `✅ ${p.name} Berhasil Hadir!<br><span class="text-xs font-normal opacity-90 mt-1 block">Jam Check-in: ${getTimeStr(ts)} WIB</span>`);
             }
@@ -432,7 +447,7 @@
                 const ts = fmtDate();
                 push(ref(db, 'gifts'), {
                     id: Date.now().toString(), participantId: p.id, name: p.name,
-                    classGrade: p.classGrade, sector: p.sector, timestamp: ts
+                    category: p.category || '', classGrade: p.classGrade, sector: p.sector, timestamp: ts
                 });
                 window.showScanResult(true, `🎁 ${p.name} Dapat Hadiah!<br><span class="text-xs font-normal opacity-90 mt-1 block">Jam Klaim: ${getTimeStr(ts)} WIB</span>`, 'bg-red-600');
             }
@@ -527,7 +542,8 @@
                 <div class="flex items-center justify-between p-3.5 border-b border-slate-100 hover:bg-slate-50 transition-colors">
                     <div>
                         <div class="font-bold text-slate-800 text-sm">${p.name}</div>
-                        <div class="flex gap-2 mt-1.5">
+                        <div class="flex flex-wrap gap-2 mt-1.5">
+                            ${p.category ? `<span class="text-[10px] bg-amber-50 text-amber-600 border border-amber-100 px-2 py-0.5 rounded-md font-bold">${p.category}</span>` : ''}
                             <span class="text-[10px] bg-indigo-50 text-indigo-600 border border-indigo-100 px-2 py-0.5 rounded-md font-bold">${p.classGrade}</span>
                             <span class="text-[10px] bg-sky-50 text-sky-600 border border-sky-100 px-2 py-0.5 rounded-md font-bold">${p.sector}</span>
                         </div>
@@ -558,24 +574,49 @@
             window.render();
             if(t === 'scan' || t === 'gift') setTimeout(() => window.initScanner(), 300);
         };
+        
+        // Fungsi baru untuk mengatur filter kelas
+        window.setRegisterFilter = (filterName) => {
+            state.classFilter = filterName;
+            window.renderParticipantListOnly();
+        };
 
         window.renderParticipantListOnly = () => {
             const container = document.getElementById('participant-list-container');
             if (container) {
+                // Memfilter data sesuai kelas yang dipilih
+                let filteredList = state.participants;
+                if (state.classFilter !== 'Semua') {
+                    filteredList = filteredList.filter(p => p.classGrade === state.classFilter);
+                }
+
+                // Daftar filter yang disediakan
+                const filterOptions = ['Semua', 'Pagi', 'Daud', 'Daniel', 'Paulus', 'Ester', 'ASM', 'GSM', 'Orang Tua', 'Tamu Undangan'];
+                const filterHTML = `
+                    <div class="flex gap-2 overflow-x-auto pb-2 no-scrollbar mb-3 px-1 snap-x">
+                        ${filterOptions.map(f => `
+                            <button onclick="window.setRegisterFilter('${f}')" class="snap-center flex-none px-4 py-1.5 rounded-full text-[11px] font-bold transition-all duration-200 ${state.classFilter === f ? 'bg-red-600 text-white shadow-md border-transparent' : 'bg-white text-slate-500 border border-slate-200 hover:bg-slate-50'}">${f}</button>
+                        `).join('')}
+                    </div>
+                `;
+
                 if (state.participants.length === 0) {
-                    container.innerHTML = `<div class="text-center py-10 bg-white rounded-2xl border-2 border-dashed border-slate-200"><div class="text-4xl mb-3 opacity-50">📝</div><div class="text-sm font-medium text-slate-500">Belum ada peserta terdaftar</div></div>`;
+                    container.innerHTML = `<div class="text-center py-10 bg-white rounded-2xl border-2 border-dashed border-slate-200 mt-6"><div class="text-4xl mb-3 opacity-50">📝</div><div class="text-sm font-medium text-slate-500">Belum ada peserta terdaftar</div></div>`;
                     return;
                 }
                 
                 container.innerHTML = `
-                    <div class="mb-4 flex justify-between items-center px-1 mt-6">
-                        <div>
-                            <h3 class="font-bold text-slate-800">Peserta Terbaru</h3>
-                            <p class="text-xs text-slate-500">${state.participants.length} Total Pendaftar</p>
+                    <div class="mt-6 mb-2">
+                        <div class="flex justify-between items-center px-1 mb-3">
+                            <div>
+                                <h3 class="font-bold text-slate-800">Daftar Peserta</h3>
+                                <p class="text-xs text-slate-500">Menampilkan ${filteredList.length} dari ${state.participants.length} Pendaftar</p>
+                            </div>
                         </div>
+                        ${filterHTML}
                     </div>
                     <div class="space-y-3">
-                        ${state.participants.slice().reverse().slice(0, 50).map(p => {
+                        ${filteredList.length === 0 ? `<div class="text-center py-8 text-sm font-medium text-slate-400 bg-white rounded-2xl border border-slate-100">Tidak ada pendaftar di kelas ini</div>` : filteredList.slice().reverse().slice(0, 50).map(p => {
                             const active = state.attendance.find(a => a.participantId === p.id);
                             const claimedGift = state.gifts.find(g => g.participantId === p.id);
                             return `
@@ -583,6 +624,7 @@
                                 <div class="flex-1">
                                     <div class="font-bold text-slate-800 text-sm mb-1.5">${p.name}</div>
                                     <div class="flex flex-wrap gap-2">
+                                        ${p.category ? `<span class="text-[10px] bg-amber-50 text-amber-600 px-2 py-0.5 rounded-md font-bold border border-amber-100">${p.category}</span>` : ''}
                                         <span class="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md font-bold">${p.classGrade}</span>
                                         <span class="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md font-bold">${p.sector}</span>
                                         ${active ? `<span class="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-md font-bold">✓ Hadir ${getTimeStr(active.timestamp)}</span>` : ''}
@@ -614,27 +656,43 @@
                                     <div class="flex-1">
                                         <label class="block text-xs font-bold text-slate-500 mb-1.5 ml-1">Kategori</label>
                                         <div class="relative">
-                                            <select id="inClass" class="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-semibold text-slate-700 focus:outline-none focus:border-red-500 focus:bg-white appearance-none transition-all">
+                                            <select id="inCategory" class="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-semibold text-slate-700 focus:outline-none focus:border-red-500 focus:bg-white appearance-none transition-all">
                                                 <option value="" disabled selected>Pilih...</option>
-                                                <option value="Daud">Daud</option><option value="Daniel">Daniel</option>
-                                                <option value="Paulus">Paulus</option><option value="Ester">Ester</option>
-                                                <option value="GSM">GSM</option><option value="Orang Tua">Orang Tua</option><option value="Tamu Undangan">Tamu Undangan</option>
+                                                <option value="ASM">ASM</option>
+                                                <option value="GSM">GSM</option>
+                                                <option value="Orang Tua">Orang Tua</option>
+                                                <option value="Tamu Undangan">Tamu Undangan</option>
                                             </select>
                                             <div class="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-slate-400">▼</div>
                                         </div>
                                     </div>
                                     <div class="flex-1">
-                                        <label class="block text-xs font-bold text-slate-500 mb-1.5 ml-1">Sektor</label>
+                                        <label class="block text-xs font-bold text-slate-500 mb-1.5 ml-1">Kelas</label>
                                         <div class="relative">
-                                            <select id="inSector" class="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-semibold text-slate-700 focus:outline-none focus:border-red-500 focus:bg-white appearance-none transition-all">
-                                                <option value="" disabled selected>Sektor...</option>
-                                                ${[...Array(12)].map((_,i)=>`<option value="Sektor ${i+1}">Sektor ${i+1}</option>`).join('')}
+                                            <select id="inClass" class="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-semibold text-slate-700 focus:outline-none focus:border-red-500 focus:bg-white appearance-none transition-all">
+                                                <option value="" disabled selected>Pilih...</option>
+                                                <option value="Pagi">Pagi</option>
+                                                <option value="Daud">Daud</option>
+                                                <option value="Daniel">Daniel</option>
+                                                <option value="Paulus">Paulus</option>
+                                                <option value="Ester">Ester</option>
+                                                <option value="-">Umum / Tidak Ada</option>
                                             </select>
                                             <div class="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-slate-400">▼</div>
                                         </div>
                                     </div>
                                 </div>
-                                <button onclick="window.preRegister()" class="w-full mt-4 py-4 bg-red-600 text-white font-bold rounded-2xl shadow-lg shadow-red-200 hover:bg-red-700 hover:shadow-xl active:scale-[0.98] transition-all flex justify-center items-center gap-2">
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-500 mb-1.5 ml-1">Sektor</label>
+                                    <div class="relative">
+                                        <select id="inSector" class="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-semibold text-slate-700 focus:outline-none focus:border-red-500 focus:bg-white appearance-none transition-all">
+                                            <option value="" disabled selected>Pilih Sektor...</option>
+                                            ${[...Array(12)].map((_,i)=>`<option value="Sektor ${i+1}">Sektor ${i+1}</option>`).join('')}
+                                        </select>
+                                        <div class="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-slate-400">▼</div>
+                                    </div>
+                                </div>
+                                <button onclick="window.preRegister()" class="w-full mt-2 py-4 bg-red-600 text-white font-bold rounded-2xl shadow-lg shadow-red-200 hover:bg-red-700 hover:shadow-xl active:scale-[0.98] transition-all flex justify-center items-center gap-2">
                                     Buat Tiket <span class="text-xl">🎟️</span>
                                 </button>
                             </div>
@@ -753,7 +811,8 @@
                             <div class="bg-white p-4 rounded-2xl shadow-sm flex items-center justify-between border border-slate-100">
                                 <div>
                                     <div class="font-bold text-slate-800 text-sm mb-1">${item.name}</div>
-                                    <div class="flex gap-2 text-[10px] text-slate-500">
+                                    <div class="flex gap-2 text-[10px] text-slate-500 flex-wrap mt-1">
+                                        ${item.category ? `<span class="bg-amber-50 text-amber-600 border border-amber-100 px-2 py-0.5 rounded-md font-semibold">${item.category}</span>` : ''}
                                         <span class="bg-slate-100 px-2 py-0.5 rounded-md font-semibold">${item.classGrade}</span>
                                         <span class="bg-slate-100 px-2 py-0.5 rounded-md font-semibold">${item.sector}</span>
                                     </div>
@@ -775,9 +834,10 @@
             }
         };
 
-        window.showTicket = (n, c, s, q) => {
+        window.showTicket = (n, cat, c, s, q) => {
             if (!n || !q) return;
             document.getElementById('ticName').innerText = n || "Peserta";
+            document.getElementById('ticCategory').innerText = cat || "-";
             document.getElementById('ticClass').innerText = c || "-";
             document.getElementById('ticSector').innerText = s || "-";
             const qrUrl = getQR(q);
@@ -808,8 +868,8 @@
                     .header div { font-size: 10px; text-transform: uppercase; letter-spacing: 2px; }
                     .content { padding: 20px; text-align: center; }
                     .name { font-size: 22px; font-weight: bold; margin-bottom: 15px; color: #1e293b; }
-                    .badges { margin-bottom: 20px; }
-                    .badge { display: inline-block; padding: 4px 12px; background: #f1f5f9; color: #475569; border-radius: 20px; font-size: 12px; font-weight: bold; margin: 0 5px; border: 1px solid #e2e8f0; }
+                    .badges { margin-bottom: 20px; display: flex; justify-content: center; flex-wrap: wrap; gap: 5px; }
+                    .badge { display: inline-block; padding: 4px 12px; background: #f1f5f9; color: #475569; border-radius: 20px; font-size: 12px; font-weight: bold; border: 1px solid #e2e8f0; }
                     .qr-container { padding: 10px; border: 2px solid #f1f5f9; border-radius: 15px; display: inline-block; margin-bottom: 10px; }
                     .qr-code { width: 180px; height: 180px; }
                     .footer { font-size: 10px; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; }
@@ -830,6 +890,7 @@
                     <div class="content">
                         <div class="name">${document.getElementById('ticName').innerText}</div>
                         <div class="badges">
+                            <span class="badge" style="background: #fffbeb; color: #b45309; border-color: #fef3c7;">${document.getElementById('ticCategory').innerText}</span>
                             <span class="badge">${document.getElementById('ticClass').innerText}</span>
                             <span class="badge">${document.getElementById('ticSector').innerText}</span>
                         </div>
@@ -848,17 +909,17 @@
         window.exportData = (type) => {
             let csv = "", filename = "", data = [];
             if (type === 'p') {
-                csv += "Nama,Kelas,Sektor,QR_Code,Waktu_Daftar\n";
+                csv += "Nama,Kategori,Kelas,Sektor,QR_Code,Waktu_Daftar\n";
                 data = state.participants; filename = "Data_Jemaat_Natal_2026.csv";
-                data.forEach(x => { csv += `"${x.name}","${x.classGrade}","${x.sector}","${x.qrCode}","${x.registeredAt}"\n`; });
+                data.forEach(x => { csv += `"${x.name}","${x.category || '-'}","${x.classGrade || '-'}","${x.sector || '-'}","${x.qrCode}","${x.registeredAt}"\n`; });
             } else if (type === 'a') {
-                csv += "Nama,Kelas,Sektor,Waktu_Hadir\n";
+                csv += "Nama,Kategori,Kelas,Sektor,Waktu_Hadir\n";
                 data = state.attendance; filename = "Laporan_Absensi_Natal_2026.csv";
-                data.forEach(x => { csv += `"${x.name}","${x.classGrade}","${x.sector}","${x.timestamp}"\n`; });
+                data.forEach(x => { csv += `"${x.name}","${x.category || '-'}","${x.classGrade || '-'}","${x.sector || '-'}","${x.timestamp}"\n`; });
             } else if (type === 'g') {
-                csv += "Nama,Kelas,Sektor,Waktu_Ambil_Hadiah\n";
+                csv += "Nama,Kategori,Kelas,Sektor,Waktu_Ambil_Hadiah\n";
                 data = state.gifts; filename = "Laporan_Hadiah_Natal_2026.csv";
-                data.forEach(x => { csv += `"${x.name}","${x.classGrade}","${x.sector}","${x.timestamp}"\n`; });
+                data.forEach(x => { csv += `"${x.name}","${x.category || '-'}","${x.classGrade || '-'}","${x.sector || '-'}","${x.timestamp}"\n`; });
             }
             const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement("a");
@@ -874,11 +935,12 @@
                  let c = 0;
                  lines.forEach((l,i) => {
                      if(i===0) return;
-                     const [n, cl, sc] = l.split(',').map(x => x?.replace(/"/g,'').trim());
+                     // Disesuaikan untuk membaca 4 komponen (Nama, Kategori, Kelas, Sektor)
+                     const [n, cat, cl, sc] = l.split(',').map(x => x?.replace(/"/g,'').trim());
                      if(n) {
                          const id = (Date.now()+i).toString();
                          push(ref(db, 'participants'), {
-                             id, name: n, classGrade: cl||'Daud', sector: sc||'Sektor 1',
+                             id, name: n, category: cat || 'ASM', classGrade: cl || 'Pagi', sector: sc || 'Sektor 1',
                              qrCode: `NATAL2026-${id.slice(-6)}`, registeredAt: fmtDate(), timestamp: Date.now()
                          });
                          c++;
