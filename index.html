@@ -259,15 +259,20 @@
             </div>
             
             <!-- Actions -->
-            <div class="flex gap-3 mt-6">
-                <!-- Tambahan fungsi deteksi OS untuk mengedukasi peserta -->
-                <a id="btnDownloadTicket" href="#" download="Tiket_Natal_2026_GKPS.png" onclick="window.checkDownloadOS()"
-                   class="flex-1 py-4 bg-white text-slate-800 font-bold rounded-2xl shadow-lg hover:bg-slate-50 transition-all flex items-center justify-center gap-2 text-sm">
-                    📥 Unduh File
-                </a>
+            <div class="flex gap-2 mt-6">
+                <!-- Tombol Unduh yang Diperbarui -->
+                <button onclick="window.downloadBarcode()"
+                   class="flex-1 py-3 bg-white text-slate-800 font-bold rounded-2xl shadow-lg hover:bg-slate-50 transition-all flex flex-col items-center justify-center gap-1 text-[11px]">
+                    <span class="text-lg">📥</span> Unduh
+                </button>
+                <!-- Tombol Tutup Baru -->
+                <button onclick="window.closeModal('ticketModal')" 
+                        class="flex-1 py-3 bg-slate-100 text-slate-600 font-bold rounded-2xl shadow-lg hover:bg-slate-200 transition-colors flex flex-col items-center justify-center gap-1 text-[11px]">
+                    <span class="text-lg">✖️</span> Tutup
+                </button>
                 <button onclick="window.printTicket()" 
-                        class="flex-1 py-4 bg-red-600 text-white font-bold rounded-2xl shadow-lg hover:bg-red-700 transition-colors flex items-center justify-center gap-2 text-sm">
-                    🖨️ Cetak
+                        class="flex-1 py-3 bg-red-600 text-white font-bold rounded-2xl shadow-lg hover:bg-red-700 transition-colors flex flex-col items-center justify-center gap-1 text-[11px]">
+                    <span class="text-lg">🖨️</span> Cetak
                 </button>
             </div>
         </div>
@@ -841,17 +846,38 @@
             document.getElementById('ticSector').innerText = s || "-";
             const qrUrl = getQR(q);
             document.getElementById('ticQR').src = qrUrl;
-            document.getElementById('btnDownloadTicket').href = qrUrl;
             const t = document.getElementById('ticketModal');
             t.classList.remove('hidden');
             setTimeout(() => { t.style.opacity = '1'; t.children[0].classList.replace('scale-95', 'scale-100'); }, 10);
         };
         
-        // Fitur peringatan dan deteksi OS untuk mempermudah mencari file download di Galeri
-        window.checkDownloadOS = () => {
-            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-            if (isIOS) {
-                alert("📱 INFO iPHONE / iPAD:\n\nSistem iOS biasanya menyimpan file yang diunduh ke aplikasi 'Files' (Data), BUKAN ke 'Photos' (Galeri).\n\nUntuk menyimpannya langsung ke Galeri Foto Anda:\n1. Tekan & Tahan gambar QR Code pada layar.\n2. Pilih opsi 'Save Image' atau 'Simpan Gambar'.");
+        // Fitur unduh paksa barcode langsung ke penyimpanan
+        window.downloadBarcode = async () => {
+            const qrUrl = document.getElementById('ticQR').src;
+            const pName = document.getElementById('ticName').innerText.replace(/\s+/g, '_');
+            const filename = `Tiket_Natal_2026_${pName}.png`;
+            
+            try {
+                const response = await fetch(qrUrl);
+                const blob = await response.blob();
+                const blobUrl = URL.createObjectURL(blob);
+                
+                const link = document.createElement('a');
+                link.href = blobUrl;
+                link.download = filename;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(blobUrl);
+            } catch (err) {
+                // Fallback jika fetch gagal
+                const link = document.createElement('a');
+                link.href = qrUrl;
+                link.download = filename;
+                link.target = "_blank";
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
             }
         };
 
