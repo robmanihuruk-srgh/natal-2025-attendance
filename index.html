@@ -4,6 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Absensi Event Natal 2026 - GKPS Tangerang</title>
+    
+    <!-- Menyembunyikan peringatan Tailwind CDN di console -->
+    <script>
+        const originalWarn = console.warn;
+        console.warn = function(...args) {
+            if (args[0] && typeof args[0] === 'string' && args[0].includes("cdn.tailwindcss.com should not be used")) return;
+            originalWarn.apply(console, args);
+        };
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
@@ -24,8 +33,8 @@
         #reader video { 
             object-fit: cover; 
             border-radius: 14px;
-            transform: scaleX(-1); 
             width: 100% !important;
+            /* Transform flip dihapus agar tampilan kamera di HP (kamera belakang) tidak terbalik, library akan mengaturnya otomatis */
         }
         /* Sembunyikan elemen UI default library yang mengganggu */
         #reader__dashboard_section_csr span, 
@@ -429,27 +438,31 @@
         window.initScanner = () => {
             if(state.scanner) return;
             
+            // Pengecekan Keamanan Akses Kamera (Wajib HTTPS / Localhost)
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                const scanRes = document.getElementById('scanRes');
+                if (scanRes) {
+                    scanRes.innerHTML = "⚠️ <b>Kamera Diblokir!</b><br>Browser mengharuskan aplikasi diakses via <b>HTTPS</b>. Jika file ini hanya di-klik ganda (file:///), kamera tidak akan diizinkan.";
+                    scanRes.className = "p-4 rounded-xl font-medium text-center text-white shadow-lg mb-4 bg-red-600 text-xs leading-relaxed";
+                    scanRes.classList.remove('hidden');
+                }
+                alert("⚠️ AKSES KAMERA DIBLOKIR BROWSER!\n\nUntuk menggunakan fitur scan, Anda tidak bisa sekadar membuka file HTML ini secara lokal.\n\nSilakan 'Hosting' file ini ke server online seperti Netlify atau GitHub Pages agar menggunakan link HTTPS.");
+                return;
+            }
+            
+            // Konfigurasi Paling Aman & Kompatibel untuk SEMUA Device (Laptop, Tablet, iOS, Android)
             const config = { 
                 fps: 10, 
-                qrbox: (viewfinderWidth, viewfinderHeight) => {
-                    let minEdgePercentage = 0.7; 
-                    let minEdgeSize = Math.min(viewfinderWidth, viewfinderHeight);
-                    let qrboxSize = Math.floor(minEdgeSize * minEdgePercentage);
-                    if (qrboxSize < 220) qrboxSize = 220; 
-                    return { width: qrboxSize, height: qrboxSize };
-                },
-                disableFlip: false,
-                videoConstraints: {
-                    width: { min: 640, ideal: 1280 },
-                    height: { min: 480, ideal: 720 },
-                    facingMode: "environment" // Changed to environment for better scanning with back camera
-                }
+                qrbox: { width: 250, height: 250 }, // Ukuran absolut aman: tidak akan crash meskipun webcam laptop beresolusi sangat rendah
+                rememberLastUsedCamera: true, // Otomatis mengingat apakah user terakhir pakai kamera depan/belakang
+                aspectRatio: 1.0, // Menjaga kestabilan rasio video di layar tablet/iPad
+                supportedScanTypes: [0] // 0 = Eksklusif menggunakan Html5QrcodeScanType.SCAN_TYPE_CAMERA
             };
             
             state.scanner = new Html5QrcodeScanner("reader", config, false);
             
             state.scanner.render((decodedText) => {
-                if(state.scanner) state.scanner.pause();
+                if(state.scanner) state.scanner.pause(true); // Jeda visual ("freeze" frame kamera sejenak) saat berhasil baca QR
                 const p = state.participants.find(x => x.qrCode === decodedText);
                 
                 if(p) {
@@ -542,7 +555,8 @@
                 }
             });
             window.render();
-            if(t === 'scan' || t === 'gift') setTimeout(() => window.initScanner(), 100);
+            // Jeda dinaikkan jadi 300ms agar DOM sepenuhnya siap dirender sebelum library meminta ukuran layar ke OS Laptop/Tablet
+            if(t === 'scan' || t === 'gift') setTimeout(() => window.initScanner(), 300);
         };
 
         window.renderParticipantListOnly = () => {
