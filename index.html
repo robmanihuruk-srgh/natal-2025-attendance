@@ -485,9 +485,12 @@
                 
                 const p = state.participants.find(x => x.qrCode === decodedText);
                 
-                // Proses absen berjalan normal
-                if(p) window.processScannedID(p.id); 
-                else { beep('fail'); window.showScanResult(false, "❌ QR Code Tidak Dikenali"); }
+                // Proses absen berjalan dengan proteksi password (Admin Only)
+                if(p) {
+                    window.secureProcess(p.id); 
+                } else { 
+                    beep('fail'); window.showScanResult(false, "❌ QR Code Tidak Dikenali"); 
+                }
                 
                 setTimeout(() => { 
                     try {
@@ -589,18 +592,18 @@
         window.renderParticipantListOnly = () => {
             const container = document.getElementById('participant-list-container');
             if (container) {
-                // Memfilter data sesuai kelas yang dipilih
+                // Memfilter data sesuai kelas atau kategori yang dipilih
                 let filteredList = state.participants;
                 if (state.classFilter !== 'Semua') {
-                    filteredList = filteredList.filter(p => p.classGrade === state.classFilter);
+                    filteredList = filteredList.filter(p => p.classGrade === state.classFilter || p.category === state.classFilter);
                 }
 
                 // Daftar filter yang disediakan
                 const filterOptions = ['Semua', 'Pagi', 'Daud', 'Daniel', 'Paulus', 'Ester', 'ASM', 'GSM', 'Orang Tua', 'Tamu Undangan'];
                 const filterHTML = `
-                    <div class="flex gap-2 overflow-x-auto pb-2 no-scrollbar mb-3 px-1 snap-x">
+                    <div class="flex flex-wrap gap-2 mb-3 px-1">
                         ${filterOptions.map(f => `
-                            <button onclick="window.setRegisterFilter('${f}')" class="snap-center flex-none px-4 py-1.5 rounded-full text-[11px] font-bold transition-all duration-200 ${state.classFilter === f ? 'bg-red-600 text-white shadow-md border-transparent' : 'bg-white text-slate-500 border border-slate-200 hover:bg-slate-50'}">${f}</button>
+                            <button onclick="window.setRegisterFilter('${f}')" class="px-4 py-1.5 rounded-full text-[11px] font-bold transition-all duration-200 ${state.classFilter === f ? 'bg-red-600 text-white shadow-md border-transparent' : 'bg-white text-slate-500 border border-slate-200 hover:bg-slate-50'}">${f}</button>
                         `).join('')}
                     </div>
                 `;
