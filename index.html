@@ -932,6 +932,12 @@
         };
 
         window.exportData = (type) => {
+            const pass = prompt("🔒 FITUR TERKUNCI\n\nMasukkan Password Panitia (Admin):");
+            if (pass !== ADMIN_PASS) {
+                if(pass !== null) alert("⛔ AKSES DITOLAK! Password salah.");
+                return;
+            }
+
             let csv = "", filename = "", data = [];
             if (type === 'p') {
                 csv += "Nama,Kategori,Kelas,Sektor,QR_Code,Waktu_Daftar\n";
@@ -977,7 +983,14 @@
              r.readAsText(f);
         };
         
-        window.triggerImport = () => document.getElementById('importInput').click();
+        window.triggerImport = () => {
+            const pass = prompt("🔒 FITUR TERKUNCI\n\nMasukkan Password Panitia (Admin):");
+            if (pass !== ADMIN_PASS) {
+                if(pass !== null) alert("⛔ AKSES DITOLAK! Password salah.");
+                return;
+            }
+            document.getElementById('importInput').click();
+        };
 
         window.resetData = () => {
             if(prompt("Peringatan: Tindakan ini akan menghapus semua data peserta, absensi, dan hadiah!\n\nMasukkan Password Admin:") === ADMIN_PASS && confirm("Apakah Anda YAKIN ingin menghapus SEMUA data? Data yang terhapus tidak dapat dikembalikan.")) {
